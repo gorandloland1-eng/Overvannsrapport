@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import AuthPage from "./pages/AuthPage";
 import { useAuth } from "./auth/AuthProvider";
 import { logout } from "./auth/authActions";
@@ -30,3 +31,18 @@ export default function App() {
     </div>
   );
 }
+=======
+import { useState } from 'react'
+import reactLogo from './assets/react.svg'
+import viteLogo from '/vite.svg'
+import './App.css'
+import HomePage from "./pages/HomePage";
+
+export default function App() {
+  return (
+    <div className="min-h-dvh w-full bg-[#F6F8FF]">
+      <HomePage />
+    </div>
+  );
+}
+>>>>>>> Stashed changes
