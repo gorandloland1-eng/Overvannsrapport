@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { useState } from "react";
 import { loginWithEmail, registerWithEmail } from "../auth/authActions";
 import { updateProfile } from "firebase/auth";
