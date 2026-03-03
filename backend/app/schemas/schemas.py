@@ -36,3 +36,10 @@ class PropertyLookupRequest(BaseModel):
 class PropertyLookupResponse(BaseModel):
     lat: float
     lng: float
+
+# --- Weather station look up --- #
+class WeatherStation(BaseModel):
+    id: str
+    name: str
+    lat: float
+    lng: float
