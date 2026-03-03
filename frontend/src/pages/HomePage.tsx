@@ -1,6 +1,8 @@
+
 import { MapContainer, TileLayer } from "react-leaflet";
 import logo from "../assets/logo.png";
 import { useState } from "react";
+
 
 type WeatherStation = {
   id: string;
@@ -46,10 +48,10 @@ const [projectName, setProjectName] = useState("");
 </div>
 
     {/* Right */}
-<button
-  className="flex h-10 w-10 items-center justify-center rounded-full border-3 border-white text-white hover:bg-white/10 transition"
-  aria-label="Profil"
->
+    <button
+    className="flex h-10 w-10 items-center justify-center rounded-full border-3 border-white text-white hover:bg-white/10 transition"
+     aria-label="Profil"
+    >
   <svg width="35" height="35" viewBox="0 0 24 24">
     <defs>
       {/* Klipp innholdet litt innenfor ringen */}
