@@ -43,3 +43,9 @@ class WeatherStation(BaseModel):
     name: str
     lat: float
     lng: float
+
+class TwoPointRequest(BaseModel):
+    lat1: float
+    lng1: float
+    lat2: float
+    lng2: float
