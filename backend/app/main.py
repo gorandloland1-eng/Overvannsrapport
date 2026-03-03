@@ -7,6 +7,8 @@ from app.services.calculations.ivf import OSLO_BLINDERN_IVF
 
 app = FastAPI()
 
+CLIENT_ID = "4d96f374-2aff-4bfd-a7be-d7522cc7bbc5"
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],  # Vite default
