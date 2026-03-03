@@ -1,63 +1,48 @@
-import { useState } from "react";
+<<<<<<< Updated upstream
+import AuthPage from "./pages/AuthPage";
 import { useAuth } from "./auth/AuthProvider";
-import { loginWithEmail, registerWithEmail, logout } from "./auth/authActions";
+import { logout } from "./auth/authActions";
 
-export default function App() {
-  const { user, loading } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-
-  async function handleLogin() {
-    setError("");
-    try {
-      await loginWithEmail(email, password);
-    } catch (e) {
-      setError(e.message);
-    }
-  }
-
-  async function handleRegister() {
-    setError("");
-    try {
-      await registerWithEmail(email, password);
-    } catch (e) {
-      setError(e.message);
-    }
-  }
-
-  if (loading) return <div>Laster…</div>;
-
-  if (user) {
-    return (
-      <div style={{ padding: 16 }}>
-        <p>Innlogget som: {user.email}</p>
-        <button onClick={logout}>Logg ut</button>
-      </div>
-    );
-  }
-
+function Dashboard() {
   return (
-    <div style={{ padding: 16, display: "grid", gap: 8, maxWidth: 320 }}>
-      <h3>Logg inn</h3>
-      <input
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="E-post"
-        autoComplete="email"
-      />
-      <input
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="Passord"
-        type="password"
-        autoComplete="current-password"
-      />
-
-      {error && <div style={{ color: "crimson" }}>{error}</div>}
-
-      <button onClick={handleLogin}>Logg inn</button>
-      <button onClick={handleRegister}>Registrer</button>
+    <div style={{ padding: 16 }}>
+      <h2>Inni appen</h2>
     </div>
   );
 }
+
+export default function App() {
+  const { user, loading } = useAuth();
+
+  if (loading) return <div>Laster…</div>;
+
+  // Ikke innlogget → vis login/register-siden
+  if (!user) return <AuthPage />;
+
+  // Innlogget → vis resten av appen
+  return (
+    <div style={{ padding: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>Innlogget som: {user.email}</div>
+        <button onClick={logout}>Logg ut</button>
+      </div>
+
+      <Dashboard />
+    </div>
+  );
+}
+=======
+import { useState } from 'react'
+import reactLogo from './assets/react.svg'
+import viteLogo from '/vite.svg'
+import './App.css'
+import HomePage from "./pages/HomePage";
+
+export default function App() {
+  return (
+    <div className="min-h-dvh w-full bg-[#F6F8FF]">
+      <HomePage />
+    </div>
+  );
+}
+>>>>>>> Stashed changes
