@@ -52,12 +52,12 @@ export default function AuthPage() {
         const userCredential = await registerWithEmail(email, password);
         const user = userCredential.user;
 
-        // Sett displayName i Firebase Auth (som før)
+        // Sett displayName i Firebase Auth
         await updateProfile(user, {
           displayName: `${firstName.trim()} ${lastName.trim()}`,
         });
 
-        // ✅ Lagre profil i Firestore: users/{uid}
+        // Lagre profil i Firestore: users/{uid}
         await setDoc(doc(db, "users", user.uid), {
           uid: user.uid,
           firstName: firstName.trim(),
