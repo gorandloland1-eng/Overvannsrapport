@@ -286,17 +286,33 @@ useEffect(() => {
                 </div>
               </section>
 
+                            {/* Høyde og Lengde (visuelle, read-only) */}
               <section>
-                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-                  Værstasjon
-                </label>
-                <select className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700">
-                  {WEATHER_STATIONS.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
+                      Høyde
+                    </label>
+                    <input
+                      className="h-10 w-full rounded-full border border-slate-200 bg-slate-100 px-3 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                      value=""
+                      placeholder=""
+                      readOnly
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
+                      Lengde
+                    </label>
+                    <input
+                      className="h-10 w-full rounded-full border border-slate-200 bg-slate-100 px-3 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                      value=""
+                      placeholder=""
+                      readOnly
+                    />
+                  </div>
+                </div>
               </section>
 
               <section className="h-80 rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900" />
