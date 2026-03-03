@@ -1,4 +1,9 @@
-import { MapContainer, TileLayer } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  useMapEvents,
+  CircleMarker,
+} from "react-leaflet";
 import logo from "../assets/logo.png";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
@@ -16,6 +21,28 @@ const WEATHER_STATIONS: WeatherStation[] = [
   { id: "sn76920", name: "Trondheim - Voll" },
 ];
 
+// --- typer og dblclick-handler ---
+type LatLng = { lat: number; lng: number };
+
+function MapClickHandler({
+  onPick,
+}: {
+  onPick: (lat: number, lng: number) => void;
+}) {
+  const map = useMapEvents({
+    dblclick(e) {
+      onPick(e.latlng.lat, e.latlng.lng);
+    },
+  });
+
+  // ekstra sikkerhet (i tillegg til MapContainer-prop)
+  useEffect(() => {
+    map.doubleClickZoom.disable();
+  }, [map]);
+
+  return null;
+}
+
 export default function HomePage() {
   const [projectName, setProjectName] = useState("");
   const { user } = useAuth();
@@ -25,11 +52,11 @@ export default function HomePage() {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
 
-const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
-useEffect(() => {
-  document.documentElement.classList.toggle("dark", darkMode);
-}, [darkMode]);
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+  }, [darkMode]);
 
   // Klikk utenfor for å lukke meny
   useEffect(() => {
@@ -50,6 +77,84 @@ useEffect(() => {
   async function handleLogout() {
     setMenuOpen(false);
     await signOut(auth);
+  }
+
+  // --- state for to punkt + resultat ---
+  const [pointA, setPointA] = useState<LatLng | null>(null);
+  const [pointB, setPointB] = useState<LatLng | null>(null);
+
+  const [hoyde, setHoyde] = useState<number | null>(null);
+  const [lengde, setLengde] = useState<number | null>(null);
+  const [konsentrasjonstid, setKonsentrasjonstid] = useState<number | null>(
+    null
+  );
+
+  const [terrainLoading, setTerrainLoading] = useState(false);
+  const [terrainError, setTerrainError] = useState("");
+
+  // --- API-kall til FastAPI ---
+  async function fetchTerrain(a: LatLng, b: LatLng) {
+    setTerrainLoading(true);
+    setTerrainError("");
+
+    try {
+      const res = await fetch("http://localhost:8000/calculate-terrain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lat1: a.lat,
+          lng1: a.lng,
+          lat2: b.lat,
+          lng2: b.lng,
+        }),
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      setLengde(typeof data.lengde_m === "number" ? data.lengde_m : null);
+      setHoyde(
+        typeof data.hoydeforskjell_m === "number" ? data.hoydeforskjell_m : null
+      );
+      setKonsentrasjonstid(
+        typeof data.konsentrasjonstid_min === "number"
+          ? data.konsentrasjonstid_min
+          : null
+      );
+    } catch (e: unknown) {
+      setTerrainError(
+        e instanceof Error ? e.message : "Kunne ikke hente terrengdata"
+      );
+      setLengde(null);
+      setHoyde(null);
+      setKonsentrasjonstid(null);
+    } finally {
+      setTerrainLoading(false);
+    }
+  }
+
+  // --- 2-dobbelklikk logikk ---
+  function handleMapPick(lat: number, lng: number) {
+    // 1. punkt eller ny runde (hvis begge var satt)
+    if (!pointA || (pointA && pointB)) {
+      setPointA({ lat, lng });
+      setPointB(null);
+
+      setHoyde(null);
+      setLengde(null);
+      setKonsentrasjonstid(null);
+      setTerrainError("");
+      return;
+    }
+
+    // 2. punkt
+    const b = { lat, lng };
+    setPointB(b);
+    fetchTerrain(pointA, b);
   }
 
   return (
@@ -99,7 +204,13 @@ useEffect(() => {
                 </defs>
 
                 <g clipPath="url(#avatarClip)" transform="translate(0,3)">
-                  <rect x="0" y="18.5" width="24" height="6" fill="currentColor" />
+                  <rect
+                    x="0"
+                    y="18.5"
+                    width="24"
+                    height="6"
+                    fill="currentColor"
+                  />
                   <circle cx="12" cy="8" r="4" fill="currentColor" />
                   <path
                     d="M4.2 19.2c1.4-4.2 5.1-6.5 7.8-6.5s6.4 2.3 7.8 6.5"
@@ -110,34 +221,34 @@ useEffect(() => {
             </button>
 
             {menuOpen && (
-             <div
+              <div
                 ref={menuRef}
                 className="absolute right-0 mt-3 z-[9999] w-72 rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900"
-                >
-               {/* Header */}
-<div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-
-  <div className="flex h-9 w-9 items-center justify-center rounded-full 
+              >
+                {/* Header */}
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+                  <div
+                    className="flex h-9 w-9 items-center justify-center rounded-full 
   bg-white text-black border border-slate-950
   dark:bg-slate-700 dark:text-white dark:border-slate-600
-  text-sm font-semibold">
-    {user?.displayName
-      ? user.displayName
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .toUpperCase()
-      : user?.email?.charAt(0).toUpperCase()}
-  </div>
+  text-sm font-semibold"
+                  >
+                    {user?.displayName
+                      ? user.displayName
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .toUpperCase()
+                      : user?.email?.charAt(0).toUpperCase()}
+                  </div>
 
-  {/* Navn */}
-  <div className="flex flex-col">
-    <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
-      {user?.displayName || "Bruker"}
-    </div>
-  </div>
-
-</div>
+                  {/* Navn */}
+                  <div className="flex flex-col">
+                    <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                      {user?.displayName || "Bruker"}
+                    </div>
+                  </div>
+                </div>
 
                 {/* Items */}
                 <button
@@ -150,7 +261,12 @@ useEffect(() => {
                   <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
                     <span className="inline-flex h-5 w-5 items-center justify-center">
                       {/* icon */}
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        fill="none"
+                      >
                         <path
                           d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z"
                           stroke="currentColor"
@@ -178,7 +294,12 @@ useEffect(() => {
                 >
                   <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
                     <span className="inline-flex h-5 w-5 items-center justify-center">
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        fill="none"
+                      >
                         <path
                           d="M4 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z"
                           stroke="currentColor"
@@ -196,7 +317,12 @@ useEffect(() => {
                 <div className="px-4 py-3 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
                     <span className="inline-flex h-5 w-5 items-center justify-center">
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        fill="none"
+                      >
                         <path
                           d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.5 6.5 0 0 0 9.8 9.8Z"
                           stroke="currentColor"
@@ -230,7 +356,12 @@ useEffect(() => {
                 >
                   <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
                     <span className="inline-flex h-5 w-5 items-center justify-center">
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        fill="none"
+                      >
                         <path
                           d="M10 17l5-5-5-5"
                           stroke="currentColor"
@@ -286,7 +417,7 @@ useEffect(() => {
                 </div>
               </section>
 
-                            {/* Høyde og Lengde (visuelle, read-only) */}
+              {/* Høyde og Lengde (read-only, koblet til API) */}
               <section>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -295,7 +426,13 @@ useEffect(() => {
                     </label>
                     <input
                       className="h-10 w-full rounded-full border border-slate-200 bg-slate-100 px-3 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                      value=""
+                      value={
+                        terrainLoading
+                          ? "Henter..."
+                          : hoyde !== null
+                          ? `${hoyde.toFixed(1)} m`
+                          : ""
+                      }
                       placeholder=""
                       readOnly
                     />
@@ -307,12 +444,38 @@ useEffect(() => {
                     </label>
                     <input
                       className="h-10 w-full rounded-full border border-slate-200 bg-slate-100 px-3 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                      value=""
+                      value={
+                        terrainLoading
+                          ? "Henter..."
+                          : lengde !== null
+                          ? `${lengde.toFixed(1)} m`
+                          : ""
+                      }
                       placeholder=""
                       readOnly
                     />
                   </div>
                 </div>
+
+                {terrainError && (
+                  <div className="mt-2 text-xs text-red-600 dark:text-red-400">
+                    {terrainError}
+                  </div>
+                )}
+
+                <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                  Dobbeltklikk to punkter i kartet for å beregne lengde og
+                  høydeforskjell.
+                </div>
+
+                {konsentrasjonstid !== null && !terrainLoading && (
+                  <div className="mt-3 rounded-xl bg-white/60 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 p-3 text-sm font-medium text-slate-800 dark:text-slate-100">
+                    Konsentrasjonstid:{" "}
+                    <span className="font-semibold">
+                      {konsentrasjonstid.toFixed(2)} min
+                    </span>
+                  </div>
+                )}
               </section>
 
               <section className="h-80 rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900" />
@@ -330,15 +493,27 @@ useEffect(() => {
                 center={[60.3913, 5.3221]}
                 zoom={13}
                 className="h-full w-full"
+                doubleClickZoom={false}
               >
-               <TileLayer
-  attribution='&copy; OpenStreetMap contributors'
-  url={
-    darkMode
-      ? "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
-      : "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-  }
-/>
+                {/* fanger dobbeltklikk */}
+                <MapClickHandler onPick={handleMapPick} />
+
+                {/* “pinpoint” der du dobbeltklikker */}
+                {pointA && (
+                  <CircleMarker center={[pointA.lat, pointA.lng]} radius={7} />
+                )}
+                {pointB && (
+                  <CircleMarker center={[pointB.lat, pointB.lng]} radius={7} />
+                )}
+
+                <TileLayer
+                  attribution="&copy; OpenStreetMap contributors"
+                  url={
+                    darkMode
+                      ? "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
+                      : "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  }
+                />
               </MapContainer>
             </div>
           </section>
