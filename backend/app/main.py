@@ -3,11 +3,14 @@ from fastapi.middleware.cors import CORSMiddleware
 import requests
 from app.schemas.schemas import WeatherStation
 import os
+from app.services.elevation import get_elevation
+from app.utils.haversine_distance import haversine_distance
+from app.schemas.schemas import TwoPointRequest
+from app.services.calculations.konsentrasjonstid_kirpich import konsentrasjonstid_kirpich
 
 from app.aron_kibler import AronKiblerRequest
 from app.aron_kibler import aron_kibler_beregning
 from app.services.calculations.ivf import OSLO_BLINDERN_IVF
-#from app.matrikkel_api import router as matrikkel_router
 
 from fastapi.responses import FileResponse
 from app.pdf_generator import generate_project_pdf
@@ -51,35 +54,6 @@ def calculate(request: AronKiblerRequest):
     return result
 
 
-# --- Weather station endpoint --- #
-@app.get("/weather-stations", response_model=list[WeatherStation])
-def get_weather_stations():
-    response = requests.get(
-    "https://frost.met.no/sources/v0.jsonld",
-    auth=(CLIENT_ID, ""),
-    params={
-        "country": "NO",
-    }
-)
-    print(response.status_code)
-    print(response.json())
-
-    data = response.json()
-
-    result = []
-    for item in data.get("data", []):
-        station_id = item.get("id")
-        name = item.get("name")
-        geom = item.get("geometry")
-        if geom and "coordinates" in geom:
-            lng, lat = geom["coordinates"]
-        else:
-            lat = 0
-            lng = 0
-        result.append(WeatherStation(id=station_id, name=name, lat=lat, lng=lng))
-
-    return result
-
 # --- PDF generation --- #
 @app.post("/generate-pdf/{project_name}")
 def generate_pdf(project_name: str):
@@ -91,3 +65,24 @@ def generate_pdf(project_name: str):
         media_type="application/pdf",
         filename=os.path.basename(filepath)
     )
+
+@app.post("/calculate-terrain")
+def calculate_terrain(data: TwoPointRequest):
+
+    elev1 = get_elevation(data.lat1, data.lng1)
+    elev2 = get_elevation(data.lat2, data.lng2)
+
+    hoydeforskjell = abs(elev1 - elev2)
+
+    lengde = haversine_distance(
+        data.lat1, data.lng1,
+        data.lat2, data.lng2
+    )
+
+    tc = konsentrasjonstid_kirpich(lengde, hoydeforskjell)
+
+    return {
+        "lengde_m": lengde,
+        "hoydeforskjell_m": hoydeforskjell,
+        "konsentrasjonstid_min": tc
+    }
