@@ -4,6 +4,9 @@
 ## Installing backend: ##
 pip install
 
+## Go into venv ##
+source venv/bin/activate
+
 ## Accessing imports: ##
 pip install -r requirements.txt
 
