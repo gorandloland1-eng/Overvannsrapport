@@ -2,7 +2,7 @@
 
 === BACKEND ===
 ## Installing backend: ##
-pip install
+python3 -m venv venv
 
 ## Go into venv ##
 source venv/bin/activate
@@ -11,7 +11,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 ## STARTING THE BACKEND!!!!!!!!!!!! ##
-uvicorn main:app --reload
+uvicorn app.main:app --reload
 
 ## Go out of venv: ##
 deactivate
