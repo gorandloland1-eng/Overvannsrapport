@@ -7,11 +7,13 @@ import os
 from app.aron_kibler import AronKiblerRequest
 from app.aron_kibler import aron_kibler_beregning
 from app.services.calculations.ivf import OSLO_BLINDERN_IVF
+#from app.matrikkel_api import router as matrikkel_router
 
 from fastapi.responses import FileResponse
 from app.pdf_generator import generate_project_pdf
 
 app = FastAPI()
+#app.include_router(matrikkel_router)
 
 CLIENT_ID = "4d96f374-2aff-4bfd-a7be-d7522cc7bbc5"
 OUTPUT_FOLDER = "output"
