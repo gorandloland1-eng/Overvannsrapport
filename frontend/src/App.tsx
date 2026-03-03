@@ -1,35 +1,63 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import { useAuth } from "./auth/AuthProvider";
+import { loginWithEmail, registerWithEmail, logout } from "./auth/authActions";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const { user, loading } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  async function handleLogin() {
+    setError("");
+    try {
+      await loginWithEmail(email, password);
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  async function handleRegister() {
+    setError("");
+    try {
+      await registerWithEmail(email, password);
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  if (loading) return <div>Laster…</div>;
+
+  if (user) {
+    return (
+      <div style={{ padding: 16 }}>
+        <p>Innlogget som: {user.email}</p>
+        <button onClick={logout}>Logg ut</button>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <div style={{ padding: 16, display: "grid", gap: 8, maxWidth: 320 }}>
+      <h3>Logg inn</h3>
+      <input
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="E-post"
+        autoComplete="email"
+      />
+      <input
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Passord"
+        type="password"
+        autoComplete="current-password"
+      />
 
-export default App
+      {error && <div style={{ color: "crimson" }}>{error}</div>}
+
+      <button onClick={handleLogin}>Logg inn</button>
+      <button onClick={handleRegister}>Registrer</button>
+    </div>
+  );
+}
