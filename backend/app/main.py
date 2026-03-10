@@ -7,6 +7,7 @@ import os
 
 app = FastAPI()
 
+# --- CORS --- #
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -15,9 +16,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(ivf.router, prefix="/ivf")
-app.include_router(calculation.router, prefix="/calculation")
-app.include_router(terrain.router, prefix="/terrain")
+# --- Routers --- #
+app.include_router(ivf.router)
+app.include_router(calculation.router)
+app.include_router(terrain.router)
 
 @app.get("/")
 def root():
