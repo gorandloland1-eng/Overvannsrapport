@@ -1,5 +1,3 @@
-# app/pdf_generator.py
-
 import os
 from datetime import datetime
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table

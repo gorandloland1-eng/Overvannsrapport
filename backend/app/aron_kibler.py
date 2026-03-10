@@ -20,9 +20,7 @@ def beregn_innlopsvolum(
     varighet_min: float,
     klimafaktor: float
 ) -> float:
-    """
-    V_inn = phi * i * A * t * klimafaktor   [m³]
-    """
+    
     Q_ls = phi * intensitet_l_s_ha * areal_ha * klimafaktor
     return Q_ls * varighet_min * 60 / 1000
 

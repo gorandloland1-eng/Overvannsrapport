@@ -1,4 +1,6 @@
-#!/Users/olepettergranmar/Documents/GitHub/Overvannsrapport/backend/venv/bin/python3
+#!/bin/sh
+'''exec' "/Users/goran/Documents/GitHub/Overvannsrapport/overvannsrapport/Uten navn/backend/venv/bin/python3.13" "$0" "$@"
+' '''
 # -*- coding: utf-8 -*-
 import re
 import sys

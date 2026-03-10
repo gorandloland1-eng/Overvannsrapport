@@ -1,7 +1,7 @@
 import math
 
 def haversine_distance(lat1, lng1, lat2, lng2):
-    R = 6371000  # jordradius i meter
+    R = 6371000 
 
     phi1 = math.radians(lat1)
     phi2 = math.radians(lat2)
