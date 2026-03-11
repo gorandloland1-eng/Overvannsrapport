@@ -23,7 +23,7 @@ RETURN_PERIODS = [2, 5, 10, 20, 25, 50, 100, 200]
 def mm_to_lsha(mm: float, dur_min: int) -> float:
     return round(mm / (dur_min * 0.006), 1)
 
-
+# --- All weather stations --- #
 @router.get("/stations")
 def get_stations():
     results: dict[str, dict] = {}
@@ -52,6 +52,9 @@ def get_stations():
     return list(results.values())
 
 
+
+
+# --- Weather station info fields for table --- #
 @router.get("/ivf/{station_id}")
 def get_ivf(station_id: str):
     # 1. Hent stasjonsnavn fra Frost
