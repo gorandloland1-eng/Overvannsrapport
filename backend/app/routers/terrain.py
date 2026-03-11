@@ -38,5 +38,7 @@ def calculate_terrain(data: TwoPointRequest):
     return {
         "lengde_m": lengde,
         "hoydeforskjell_m": hoydeforskjell,
-        "konsentrasjonstid_min": tc
+        "konsentrasjonstid_min": tc,
+        "elev1": elev1,
+        "elev2": elev2
     }

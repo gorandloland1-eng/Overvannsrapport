@@ -62,3 +62,13 @@ class TwoPointRequest(BaseModel):
     lng1: float
     lat2: float
     lng2: float
+
+class PDFRequest(BaseModel):
+    project_name: str
+    height: float
+    length: float
+    time_of_concentration: float
+
+    # --- Kirpich calculations --- #
+    elev1: float
+    elev2: float
