@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from app.routers import ivf, calculation, terrain
+from app.routers import ivf, calculation, terrain, pdf
 from app.pdf_generator import generate_project_pdf
 import os
 
@@ -20,12 +20,4 @@ app.add_middleware(
 app.include_router(ivf.router, prefix="/ivf")
 app.include_router(calculation.router, prefix="/calculation")
 app.include_router(terrain.router)
-
-@app.post("/generate-pdf/{project_name}")
-def generate_pdf(project_name: str):
-    filepath = generate_project_pdf(project_name)
-    return FileResponse(
-        filepath,
-        media_type="application/pdf",
-        filename=os.path.basename(filepath)
-    )
+app.include_router(pdf.router, prefix="/pdf")
