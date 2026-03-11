@@ -6,6 +6,7 @@ import {
   useMapEvents,
   CircleMarker,
   GeoJSON,
+  useMap,
 } from "react-leaflet";
 import logo from "../assets/logo.png";
 import { useEffect, useRef, useState } from "react";
@@ -74,11 +75,11 @@ function MapLayerToggle({
   onChange: (layer: "kart" | "terreng" | "satellitt") => void;
 }) {
   return (
-    <div className="absolute left-56 top-2 z-[1000] flex gap-3 p-1">
+    <div className="absolute left-56 top-2 z-[1000] flex gap-2 rounded-xl bg-white/35 p-2 backdrop-blur-sm dark:bg-slate-900/30">
       <button
         type="button"
         onClick={() => onChange("kart")}
-        className={`h-20 w-24 overflow-hidden rounded-lg border-2 shadow transition ${
+        className={`h-14 w-16 overflow-hidden rounded-lg border-2 shadow transition ${
           layer === "kart"
             ? "border-black ring-2 ring-white/90"
             : "border-gray-600 bg-white/85 opacity-90 hover:opacity-100"
@@ -94,7 +95,7 @@ function MapLayerToggle({
       <button
         type="button"
         onClick={() => onChange("terreng")}
-        className={`h-20 w-24 overflow-hidden rounded-lg border-2 shadow transition ${
+        className={`h-14 w-16 overflow-hidden rounded-lg border-2 shadow transition ${
           layer === "terreng"
             ? "border-black ring-2 ring-white/90"
             : "border-gray-600 bg-white/85 opacity-90 hover:opacity-100"
@@ -110,7 +111,7 @@ function MapLayerToggle({
       <button
         type="button"
         onClick={() => onChange("satellitt")}
-        className={`h-20 w-24 overflow-hidden rounded-lg border-2 shadow transition ${
+        className={`h-14 w-16 overflow-hidden rounded-lg border-2 shadow transition ${
           layer === "satellitt"
             ? "border-black ring-2 ring-white/90"
             : "border-gray-600 bg-white/85 opacity-90 hover:opacity-100"
@@ -123,6 +124,63 @@ function MapLayerToggle({
           className="h-full w-full object-cover"
         />
       </button>
+    </div>
+  );
+}
+
+function MapScale() {
+  const map = useMap();
+  const ref = useRef<HTMLDivElement>(null);
+  const [info, setInfo] = useState({ ratio: 0, barWidth: 80, barLabel: "100 m" });
+  useEffect(() => {
+    function update() {
+      const zoom = map.getZoom();
+      const center = map.getCenter();
+      const metersPerPixel =
+        (156543.03392 * Math.cos((center.lat * Math.PI) / 180)) /
+        Math.pow(2, zoom);
+
+      const ratio = Math.round(metersPerPixel / (0.0254 / 96));
+
+      const maxMeters = metersPerPixel * 80;
+      const exp = Math.floor(Math.log10(maxMeters));
+      const d = Math.pow(10, exp);
+      const barMeters =
+        maxMeters >= 5 * d ? 5 * d : maxMeters >= 2 * d ? 2 * d : d;
+      const barLabel =
+        barMeters >= 1000 ? `${barMeters / 1000} km` : `${barMeters} m`;
+      const barWidth = Math.round(barMeters / metersPerPixel);
+
+      setInfo({ ratio, barWidth, barLabel });
+    }
+
+    map.on("zoomend moveend", update);
+    update();
+    return () => { map.off("zoomend moveend", update); };
+  }, [map]);
+
+  useEffect(() => {
+    if (ref.current) L.DomEvent.disableClickPropagation(ref.current);
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className="absolute bottom-3 left-1/2 z-1000 flex items-center gap-3 rounded-lg border border-white/40 bg-white/80 px-3 py-1.5 shadow backdrop-blur-sm select-none"
+      style={{ transform: "translateX(-50%)" }}
+    >
+      <div className="flex flex-col items-center gap-0.5">
+        <div
+          className="border-b-2 border-l-2 border-r-2 border-slate-600"
+          style={{ width: info.barWidth, height: 6 }}
+        />
+        <span className="text-[10px] font-medium text-slate-600">
+          {info.barLabel}
+        </span>
+      </div>
+      <div className="border-l border-slate-300 pl-3 text-[10px] font-semibold text-slate-600">
+        1 : {info.ratio.toLocaleString("no-NO")}
+      </div>
     </div>
   );
 }
@@ -1109,6 +1167,7 @@ export default function HomePage() {
                   <MapContainer
                     center={[60.3913, 5.3221]}
                     zoom={13}
+                    maxZoom={20}
                     className="h-full w-full"
                     doubleClickZoom={false}
                   >
@@ -1120,6 +1179,7 @@ export default function HomePage() {
                     />
 
                     <MapLayerToggle layer={mapLayer} onChange={setMapLayer} />
+                    <MapScale />
 
                     <TileLayer
                       attribution={
@@ -1135,6 +1195,14 @@ export default function HomePage() {
                           : mapLayer === "terreng"
                           ? "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
                           : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                      }
+                      maxZoom={20}
+                      maxNativeZoom={
+                        mapLayer === "terreng"
+                          ? 17
+                          : mapLayer === "kart"
+                          ? 18
+                          : 19
                       }
                     />
 
