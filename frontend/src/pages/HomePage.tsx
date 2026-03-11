@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase"; // sørg for at auth eksporteres fra firebase-fila deres
+import { useNavigate, Link } from "react-router-dom";
 
 type WeatherStation = {
   id: string;
@@ -46,6 +47,7 @@ function MapClickHandler({
 export default function HomePage() {
   const [projectName, setProjectName] = useState("");
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Dropdown
   const [menuOpen, setMenuOpen] = useState(false);
@@ -162,19 +164,19 @@ export default function HomePage() {
       <header className="sticky top-0 z-[9999] w-full bg-[#213F53] dark:bg-slate-950">
         <div className="flex h-16 w-full items-center justify-between px-5">
           {/* Left */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center">
-              <img
-                src={logo}
-                alt="Trygt Overvann logo"
-                className="h-10 w-auto object-contain"
-              />
-            </div>
+           <Link to="/" className="flex items-center gap-3">
+            <Link to="/" className="flex items-center">
+  <img
+    src={logo}
+    alt="Trygt Overvann logo"
+    className="h-10 w-auto object-contain cursor-pointer"
+  />
+</Link>
 
             <div className="text-lg font-semibold text-white">
               Trygt Overvann AS
             </div>
-          </div>
+          </Link>
 
           {/* Center (Prosjektnavn) */}
           <div className="flex flex-1 justify-center px-4">
@@ -190,35 +192,39 @@ export default function HomePage() {
           {/* Right (Profile + dropdown) */}
           <div className="relative">
             <button
-              ref={buttonRef}
-              onClick={() => setMenuOpen((v) => !v)}
-              className="flex h-10 w-10 items-center justify-center rounded-full border-[3px] border-white text-white hover:bg-white/10 transition"
-              aria-label="Profilmeny"
-              aria-expanded={menuOpen}
-            >
-              <svg width="35" height="35" viewBox="0 0 24 24" aria-hidden="true">
-                <defs>
-                  <clipPath id="avatarClip">
-                    <circle cx="12" cy="12" r="10.2" />
-                  </clipPath>
-                </defs>
+  ref={buttonRef}
+  onClick={() => setMenuOpen((v) => !v)}
+  className={`flex h-10 w-10 items-center justify-center overflow-hidden rounded-full text-white transition hover:opacity-90 ${
+    user?.photoURL ? "" : "border-[3px] border-white hover:bg-white/10"
+  }`}
+  aria-label="Profilmeny"
+  aria-expanded={menuOpen}
+>
+  {user?.photoURL ? (
+    <img
+      src={user.photoURL}
+      alt="Profilbilde"
+      className="h-full w-full object-cover"
+    />
+  ) : (
+    <svg width="35" height="35" viewBox="0 0 24 24" aria-hidden="true">
+      <defs>
+        <clipPath id="avatarClip">
+          <circle cx="12" cy="12" r="10.2" />
+        </clipPath>
+      </defs>
 
-                <g clipPath="url(#avatarClip)" transform="translate(0,3)">
-                  <rect
-                    x="0"
-                    y="18.5"
-                    width="24"
-                    height="6"
-                    fill="currentColor"
-                  />
-                  <circle cx="12" cy="8" r="4" fill="currentColor" />
-                  <path
-                    d="M4.2 19.2c1.4-4.2 5.1-6.5 7.8-6.5s6.4 2.3 7.8 6.5"
-                    fill="currentColor"
-                  />
-                </g>
-              </svg>
-            </button>
+      <g clipPath="url(#avatarClip)" transform="translate(0,3)">
+        <rect x="0" y="18.5" width="24" height="6" fill="currentColor" />
+        <circle cx="12" cy="8" r="4" fill="currentColor" />
+        <path
+          d="M4.2 19.2c1.4-4.2 5.1-6.5 7.8-6.5s6.4 2.3 7.8 6.5"
+          fill="currentColor"
+        />
+      </g>
+    </svg>
+  )}
+</button>
 
             {menuOpen && (
               <div
@@ -227,20 +233,23 @@ export default function HomePage() {
               >
                 {/* Header */}
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-                  <div
-                    className="flex h-9 w-9 items-center justify-center rounded-full 
-  bg-white text-black border border-slate-950
-  dark:bg-slate-700 dark:text-white dark:border-slate-600
-  text-sm font-semibold"
-                  >
-                    {user?.displayName
-                      ? user.displayName
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .toUpperCase()
-                      : user?.email?.charAt(0).toUpperCase()}
-                  </div>
+               <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-300 bg-white text-sm font-semibold text-black dark:border-slate-600 dark:bg-slate-700 dark:text-white">
+  {user?.photoURL ? (
+    <img
+      src={user.photoURL}
+      alt="Profilbilde"
+      className="h-full w-full object-cover"
+    />
+  ) : user?.displayName ? (
+    user.displayName
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+  ) : (
+    user?.email?.charAt(0).toUpperCase()
+  )}
+</div>
 
                   {/* Navn */}
                   <div className="flex flex-col">
@@ -253,9 +262,9 @@ export default function HomePage() {
                 {/* Items */}
                 <button
                   onClick={() => {
-                    setMenuOpen(false);
-                    // senere: navigate("/profil")
-                  }}
+  setMenuOpen(false);
+  navigate("/profil");
+}}
                   className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
@@ -356,32 +365,28 @@ export default function HomePage() {
                 >
                   <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
                     <span className="inline-flex h-5 w-5 items-center justify-center">
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="18"
-                        height="18"
-                        fill="none"
-                      >
-                        <path
-                          d="M10 17l5-5-5-5"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M15 12H3"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                        <path
-                          d="M21 3v18"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                      </svg>
+                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+  <path
+    d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  />
+  <path
+    d="M16 17l5-5-5-5"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  />
+  <path
+    d="M21 12H9"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+  />
+</svg>
                     </span>
                     <span className="text-sm font-medium">Logg ut</span>
                   </div>
