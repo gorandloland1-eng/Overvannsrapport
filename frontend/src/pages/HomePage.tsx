@@ -5,6 +5,7 @@ import {
   TileLayer,
   useMapEvents,
   CircleMarker,
+  GeoJSON,
 } from "react-leaflet";
 import logo from "../assets/logo.png";
 import { useEffect, useRef, useState } from "react";
@@ -35,12 +36,25 @@ type LatLng = { lat: number; lng: number };
 
 function MapClickHandler({
   onPick,
+  onSingleClick,
+  onCancelSingleClick,
+  onMouseMove,
 }: {
   onPick: (lat: number, lng: number) => void;
+  onSingleClick: (lat: number, lng: number) => void;
+  onCancelSingleClick: () => void;
+  onMouseMove: (lat: number, lng: number) => void;
 }) {
   const map = useMapEvents({
+    click(e) {
+      onSingleClick(e.latlng.lat, e.latlng.lng);
+    },
     dblclick(e) {
+      onCancelSingleClick();
       onPick(e.latlng.lat, e.latlng.lng);
+    },
+    mousemove(e) {
+      onMouseMove(e.latlng.lat, e.latlng.lng);
     },
   });
 
@@ -50,6 +64,120 @@ function MapClickHandler({
   }, [map]);
 
   return null;
+}
+
+function MapLayerToggle({
+  layer,
+  onChange,
+}: {
+  layer: "kart" | "terreng" | "satellitt";
+  onChange: (layer: "kart" | "terreng" | "satellitt") => void;
+}) {
+  return (
+    <div className="absolute left-56 top-2 z-[1000] flex gap-3 p-1">
+      <button
+        type="button"
+        onClick={() => onChange("kart")}
+        className={`h-20 w-24 overflow-hidden rounded-lg border-2 shadow transition ${
+          layer === "kart"
+            ? "border-black ring-2 ring-white/90"
+            : "border-gray-600 bg-white/85 opacity-90 hover:opacity-100"
+        }`}
+        title="Kart"
+      >
+        <img
+          src="https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/12/1164/2154.png"
+          alt="Kartlag"
+          className="h-full w-full object-cover"
+        />
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("terreng")}
+        className={`h-20 w-24 overflow-hidden rounded-lg border-2 shadow transition ${
+          layer === "terreng"
+            ? "border-black ring-2 ring-white/90"
+            : "border-gray-600 bg-white/85 opacity-90 hover:opacity-100"
+        }`}
+        title="Terreng"
+      >
+        <img
+          src="https://a.tile.opentopomap.org/12/1164/2154.png"
+          alt="Terrenglag"
+          className="h-full w-full object-cover"
+        />
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("satellitt")}
+        className={`h-20 w-24 overflow-hidden rounded-lg border-2 shadow transition ${
+          layer === "satellitt"
+            ? "border-black ring-2 ring-white/90"
+            : "border-gray-600 bg-white/85 opacity-90 hover:opacity-100"
+        }`}
+        title="Satellitt"
+      >
+        <img
+          src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/12/1164/2154"
+          alt="Satellittlag"
+          className="h-full w-full object-cover"
+        />
+      </button>
+    </div>
+  );
+}
+
+function latLngToUtm33(lat: number, lng: number) {
+  const a = 6378137.0;
+  const f = 1 / 298.257223563;
+  const k0 = 0.9996;
+  const e2 = f * (2 - f);
+  const ep2 = e2 / (1 - e2);
+  const lon0 = (15 * Math.PI) / 180;
+  const latRad = (lat * Math.PI) / 180;
+  const lonRad = (lng * Math.PI) / 180;
+  const sinLat = Math.sin(latRad);
+  const cosLat = Math.cos(latRad);
+  const tanLat = Math.tan(latRad);
+  const n = a / Math.sqrt(1 - e2 * sinLat * sinLat);
+  const t = tanLat * tanLat;
+  const c = ep2 * cosLat * cosLat;
+  const aTerm = cosLat * (lonRad - lon0);
+
+  const m =
+    a *
+    ((1 - e2 / 4 - (3 * e2 * e2) / 64 - (5 * e2 * e2 * e2) / 256) * latRad -
+      ((3 * e2) / 8 + (3 * e2 * e2) / 32 + (45 * e2 * e2 * e2) / 1024) *
+        Math.sin(2 * latRad) +
+      ((15 * e2 * e2) / 256 + (45 * e2 * e2 * e2) / 1024) *
+        Math.sin(4 * latRad) -
+      ((35 * e2 * e2 * e2) / 3072) * Math.sin(6 * latRad));
+
+  const easting =
+    k0 *
+      n *
+      (aTerm +
+        ((1 - t + c) * Math.pow(aTerm, 3)) / 6 +
+        ((5 - 18 * t + t * t + 72 * c - 58 * ep2) * Math.pow(aTerm, 5)) / 120) +
+    500000;
+
+  let northing =
+    k0 *
+    (m +
+      n *
+        tanLat *
+        ((aTerm * aTerm) / 2 +
+          ((5 - t + 9 * c + 4 * c * c) * Math.pow(aTerm, 4)) / 24 +
+          ((61 - 58 * t + t * t + 600 * c - 330 * ep2) *
+            Math.pow(aTerm, 6)) /
+            720));
+
+  if (lat < 0) northing += 10000000;
+
+  return {
+    northing: Math.round(northing),
+    easting: Math.round(easting - 500000),
+  };
 }
 
 export default function HomePage() {
@@ -191,6 +319,21 @@ export default function HomePage() {
 
   const [terrainLoading, setTerrainLoading] = useState(false);
   const [terrainError, setTerrainError] = useState("");
+  const [mapLayer, setMapLayer] = useState<"kart" | "terreng" | "satellitt">(
+    "kart"
+  );
+  const [eiendomGrense, setEiendomGrense] = useState<object | null>(null);
+  const [eiendomAdresse, setEiendomAdresse] = useState<string | null>(null);
+  const [eiendomMatrikkel, setEiendomMatrikkel] = useState<{
+    gnr: number;
+    bnr: number;
+    kommunenummer: string;
+  } | null>(null);
+  const [eiendomKoordinat, setEiendomKoordinat] = useState<LatLng | null>(null);
+  const [mouseKoordinat, setMouseKoordinat] = useState<LatLng | null>(null);
+  const [eiendomLoading, setEiendomLoading] = useState(false);
+  const [eiendomError, setEiendomError] = useState("");
+  const singleClickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // --- infiltrasjon state ---
   const [jordtyper, setJordtyper] = useState<
@@ -275,6 +418,90 @@ export default function HomePage() {
     const b = { lat, lng };
     setPointB(b);
     fetchTerrain(pointA, b);
+  }
+
+  function handleMapSingleClick(lat: number, lng: number) {
+    if (singleClickTimer.current) clearTimeout(singleClickTimer.current);
+    singleClickTimer.current = setTimeout(async () => {
+      setEiendomLoading(true);
+      setEiendomError("");
+      setEiendomGrense(null);
+      setEiendomAdresse(null);
+      setEiendomMatrikkel(null);
+      setEiendomKoordinat({ lat, lng });
+
+      try {
+        const res = await fetch(
+          `http://localhost:8000/v1/eiendom/punkt?lat=${lat}&lng=${lng}`
+        );
+
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || "Kunne ikke hente eiendomsdata");
+        }
+
+        const data = await res.json();
+        setEiendomAdresse(data.adresse ?? null);
+        setEiendomGrense(data.grense ?? null);
+
+        if (data.matrikkel) {
+          setEiendomMatrikkel({
+            gnr: data.matrikkel.gnr,
+            bnr: data.matrikkel.bnr,
+            kommunenummer: data.matrikkel.kommunenummer ?? "",
+          });
+        } else if (data.grense?.features?.length > 0) {
+          const props = data.grense.features[0]?.properties ?? {};
+          const fromKeys = (keys: string[]) => {
+            for (const key of keys) {
+              const value = props[key];
+              const parsed = Number(value);
+              if (Number.isFinite(parsed)) return parsed;
+            }
+            return null;
+          };
+          const gnr = fromKeys([
+            "gardsnummer",
+            "gårdsnummer",
+            "gnr",
+            "GARDSNUMMER",
+            "GNR",
+          ]);
+          const bnr = fromKeys([
+            "bruksnummer",
+            "bnr",
+            "BRUKSNUMMER",
+            "BNR",
+          ]);
+          const kommunenummer =
+            props.kommunenummer ??
+            props.kommunenr ??
+            props.knr ??
+            props.KOMMUNENUMMER ??
+            "";
+
+          if (gnr !== null && bnr !== null) {
+            setEiendomMatrikkel({
+              gnr,
+              bnr,
+              kommunenummer: String(kommunenummer),
+            });
+          }
+        }
+
+        if (Array.isArray(data.warnings) && data.warnings.length > 0) {
+          setEiendomError(data.warnings.join(" "));
+        }
+      } catch (_) {
+        setEiendomError("Kunne ikke hente eiendomsdata.");
+      } finally {
+        setEiendomLoading(false);
+      }
+    }, 300);
+  }
+
+  function cancelSingleClick() {
+    if (singleClickTimer.current) clearTimeout(singleClickTimer.current);
   }
 
   return (
@@ -669,6 +896,51 @@ export default function HomePage() {
                     </span>
                   </div>
                 )}
+
+                {eiendomLoading && (
+                  <div className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+                    Henter eiendomsdata...
+                  </div>
+                )}
+
+                {eiendomError && !eiendomLoading && (
+                  <div className="mt-2 text-xs text-amber-700 dark:text-amber-400">
+                    {eiendomError}
+                  </div>
+                )}
+
+                {(eiendomAdresse || eiendomMatrikkel) && !eiendomLoading && (
+                  <div className="mt-3 rounded-xl border border-slate-200 bg-white/60 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+                    <div className="mb-1 text-xs text-slate-500 dark:text-slate-400">
+                      Nærmeste adresse
+                    </div>
+                    <div className="text-sm font-medium text-slate-800 dark:text-slate-100">
+                      {eiendomAdresse ?? "Ingen adresse funnet for punktet"}
+                    </div>
+                    {eiendomMatrikkel && (
+                      <div className="mt-2 flex gap-3 text-xs text-slate-500 dark:text-slate-400">
+                        <span>
+                          Knr:{" "}
+                          <span className="font-semibold text-slate-700 dark:text-slate-200">
+                            {eiendomMatrikkel.kommunenummer}
+                          </span>
+                        </span>
+                        <span>
+                          Gnr:{" "}
+                          <span className="font-semibold text-slate-700 dark:text-slate-200">
+                            {eiendomMatrikkel.gnr}
+                          </span>
+                        </span>
+                        <span>
+                          Bnr:{" "}
+                          <span className="font-semibold text-slate-700 dark:text-slate-200">
+                            {eiendomMatrikkel.bnr}
+                          </span>
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </section>
 
               {/* Infiltrasjon */}
@@ -840,10 +1112,45 @@ export default function HomePage() {
                     className="h-full w-full"
                     doubleClickZoom={false}
                   >
-                    {/* fanger dobbeltklikk */}
-                    <MapClickHandler onPick={handleMapPick} />
+                    <MapClickHandler
+                      onPick={handleMapPick}
+                      onSingleClick={handleMapSingleClick}
+                      onCancelSingleClick={cancelSingleClick}
+                      onMouseMove={(lat, lng) => setMouseKoordinat({ lat, lng })}
+                    />
 
-                    {/* “pinpoint” der du dobbeltklikker */}
+                    <MapLayerToggle layer={mapLayer} onChange={setMapLayer} />
+
+                    <TileLayer
+                      attribution={
+                        mapLayer === "kart"
+                          ? "Kartverket (CC BY 4.0)"
+                          : mapLayer === "terreng"
+                          ? "OpenTopoMap (CC-BY-SA)"
+                          : "Esri, Maxar, Earthstar Geographics"
+                      }
+                      url={
+                        mapLayer === "kart"
+                          ? "https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png"
+                          : mapLayer === "terreng"
+                          ? "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
+                          : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                      }
+                    />
+
+                    {eiendomGrense && (
+                      <GeoJSON
+                        key={JSON.stringify(eiendomGrense)}
+                        data={eiendomGrense}
+                        style={{
+                          color: "#f59e0b",
+                          weight: 2,
+                          fillOpacity: 0.1,
+                          fillColor: "#f59e0b",
+                        }}
+                      />
+                    )}
+
                     {pointA && (
                       <CircleMarker
                         center={[pointA.lat, pointA.lng]}
@@ -857,14 +1164,14 @@ export default function HomePage() {
                       />
                     )}
 
-                    <TileLayer
-                      attribution="&copy; OpenStreetMap contributors"
-                      url={
-                        darkMode
-                          ? "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
-                          : "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      }
-                    />
+                    <div className="pointer-events-none absolute bottom-3 left-3 z-[1001] rounded-md border border-[#d8c4b0] bg-white/95 px-3 py-1 text-[16px] font-medium leading-none tracking-wide text-black shadow">
+                      {(() => {
+                        const source = mouseKoordinat ?? eiendomKoordinat;
+                        if (!source) return "EU89 UTM33 -";
+                        const utm = latLngToUtm33(source.lat, source.lng);
+                        return `EU89 UTM33 ${utm.northing}N ${utm.easting}Ø`;
+                      })()}
+                    </div>
                   </MapContainer>
                 </div>
               )}
