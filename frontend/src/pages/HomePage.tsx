@@ -17,6 +17,15 @@ type WeatherStation = {
   county?: string;
 };
 
+type IvfResponse = {
+  station_id: string;
+  station_name: string;
+  durations: number[];
+  return_periods: number[];
+  ls_ha: Record<string, Record<string, number>>;
+  mm: Record<string, Record<string, number>>;
+};
+
 // --- typer og dblclick-handler ---
 type LatLng = { lat: number; lng: number };
 
@@ -54,6 +63,12 @@ export default function HomePage() {
   const [stationSearch, setStationSearch] = useState("");
   const [stationDropdownOpen, setStationDropdownOpen] = useState(false);
   const stationBoxRef = useRef<HTMLDivElement | null>(null);
+
+  const [rightPanelView, setRightPanelView] = useState<"map" | "ivf">("map");
+
+  const [ivfData, setIvfData] = useState<IvfResponse | null>(null);
+  const [ivfLoading, setIvfLoading] = useState(false);
+  const [ivfError, setIvfError] = useState("");
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
@@ -96,6 +111,39 @@ export default function HomePage() {
   const selectedStation = weatherStations.find(
     (station) => station.id === selectedWeatherStation
   );
+
+  // Hent IVF-data for valgt værstasjon
+  useEffect(() => {
+  async function fetchIvf() {
+    if (!selectedWeatherStation) return;
+
+    setIvfLoading(true);
+    setIvfError("");
+
+    try {
+      const res = await fetch(
+        `http://localhost:8000/ivf/${selectedWeatherStation}`
+      );
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || "Kunne ikke hente IVF-data");
+      }
+
+      const data = await res.json();
+      setIvfData(data);
+    } catch (err) {
+      setIvfError(
+        err instanceof Error ? err.message : "Feil ved henting av IVF-data"
+      );
+      setIvfData(null);
+    } finally {
+      setIvfLoading(false);
+    }
+  }
+
+  fetchIvf();
+}, [selectedWeatherStation]);
 
   // Klikk utenfor for å lukke menyer
   useEffect(() => {
@@ -603,35 +651,149 @@ export default function HomePage() {
             </div>
           </aside>
 
-          {/* Map */}
-          <section className="order-1 h-full lg:order-2">
-            <div className="h-full w-full">
-              <MapContainer
-                center={[60.3913, 5.3221]}
-                zoom={13}
-                className="h-full w-full"
-                doubleClickZoom={false}
+          {/* Right panel */}
+          <section className="order-1 h-full lg:order-2 flex flex-col">
+            {/* Picker */}
+            <div className="flex gap-2 border-b border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+              <button
+                type="button"
+                onClick={() => setRightPanelView("map")}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                  rightPanelView === "map"
+                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                    : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                }`}
               >
-                {/* fanger dobbeltklikk */}
-                <MapClickHandler onPick={handleMapPick} />
+                Kart
+              </button>
 
-                {/* “pinpoint” der du dobbeltklikker */}
-                {pointA && (
-                  <CircleMarker center={[pointA.lat, pointA.lng]} radius={7} />
-                )}
-                {pointB && (
-                  <CircleMarker center={[pointB.lat, pointB.lng]} radius={7} />
-                )}
+              <button
+                type="button"
+                onClick={() => setRightPanelView("ivf")}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                  rightPanelView === "ivf"
+                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                    : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                }`}
+              >
+                IVF-tabell
+              </button>
+            </div>
 
-                <TileLayer
-                  attribution="&copy; OpenStreetMap contributors"
-                  url={
-                    darkMode
-                      ? "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
-                      : "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  }
-                />
-              </MapContainer>
+            <div className="flex-1">
+              {rightPanelView === "map" && (
+                <div className="h-full w-full">
+                  <MapContainer
+                    center={[60.3913, 5.3221]}
+                    zoom={13}
+                    className="h-full w-full"
+                    doubleClickZoom={false}
+                  >
+                    {/* fanger dobbeltklikk */}
+                    <MapClickHandler onPick={handleMapPick} />
+
+                    {/* “pinpoint” der du dobbeltklikker */}
+                    {pointA && (
+                      <CircleMarker
+                        center={[pointA.lat, pointA.lng]}
+                        radius={7}
+                      />
+                    )}
+                    {pointB && (
+                      <CircleMarker
+                        center={[pointB.lat, pointB.lng]}
+                        radius={7}
+                      />
+                    )}
+
+                    <TileLayer
+                      attribution="&copy; OpenStreetMap contributors"
+                      url={
+                        darkMode
+                          ? "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
+                          : "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      }
+                    />
+                  </MapContainer>
+                </div>
+              )}
+
+              {rightPanelView === "ivf" && (
+                <div className="h-full overflow-auto bg-white p-4 dark:bg-slate-950">
+                  <div className="mb-4">
+                    <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                      IVF-tabell
+                    </div>
+                    <div className="text-sm text-slate-500 dark:text-slate-400">
+                      {ivfData?.station_name ||
+                        selectedStation?.name ||
+                        "Ingen værstasjon valgt"}
+                    </div>
+                  </div>
+
+                  {ivfLoading && (
+                    <div className="text-sm text-slate-500 dark:text-slate-400">
+                      Laster IVF-data...
+                    </div>
+                  )}
+
+                  {ivfError && (
+                    <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+                      {ivfError}
+                    </div>
+                  )}
+
+                  {!ivfLoading && !ivfError && ivfData && (
+                    <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+                      <table className="min-w-full border-collapse text-sm">
+                        <thead className="bg-slate-50 dark:bg-slate-900">
+                          <tr>
+                            <th className="border border-slate-200 px-3 py-2 text-left font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200">
+                              Varighet (min)
+                            </th>
+                            {ivfData.return_periods.map((period) => (
+                              <th
+                                key={period}
+                                className="border border-slate-200 px-3 py-2 text-left font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200"
+                              >
+                                {period} år
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {ivfData.durations.map((duration) => (
+                            <tr
+                              key={duration}
+                              className="bg-white dark:bg-slate-950"
+                            >
+                              <td className="border border-slate-200 px-3 py-2 text-slate-800 dark:border-slate-700 dark:text-slate-100">
+                                {duration}
+                              </td>
+                              {ivfData.return_periods.map((period) => (
+                                <td
+                                  key={`${duration}-${period}`}
+                                  className="border border-slate-200 px-3 py-2 text-slate-800 dark:border-slate-700 dark:text-slate-100"
+                                >
+                                  {ivfData.ls_ha[String(duration)]?.[
+                                    String(period)
+                                  ] ?? "-"}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {!ivfLoading && !ivfError && !ivfData && (
+                    <div className="text-sm text-slate-500 dark:text-slate-400">
+                      Ingen IVF-data tilgjengelig.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </section>
         </div>
