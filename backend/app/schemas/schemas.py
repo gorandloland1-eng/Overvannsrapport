@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
+from typing import Optional
 
 class AronKiblerRequest(BaseModel):
     areal_ha: float
@@ -7,7 +8,19 @@ class AronKiblerRequest(BaseModel):
     returperiode_ar: int
     klimafaktor: float
     maks_paslipp_l_s: float
-    infiltrasjonskapasitet_l_s: float
+    infiltrasjonskapasitet_l_s: float = 0.0    # Alt B – direkte Q_inf
+    jordtype: Optional[str] = None              # Alt A
+    areal_bunnflate_m2: Optional[float] = None  # Alt A
+    areal_sideflater_m2: Optional[float] = None # Alt A
+
+    @model_validator(mode="after")
+    def validate_infiltrasjon(self) -> "AronKiblerRequest":
+        alt_a = [self.jordtype, self.areal_bunnflate_m2, self.areal_sideflater_m2]
+        if any(f is not None for f in alt_a) and not all(f is not None for f in alt_a):
+            raise ValueError(
+                "Alt A krever jordtype, areal_bunnflate_m2 og areal_sideflater_m2 – alle tre må oppgis."
+            )
+        return self
 
 # --- Table row --- #
 class DimensjonerendeRad(BaseModel):

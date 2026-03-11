@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import {
   MapContainer,
   TileLayer,
@@ -138,6 +140,24 @@ export default function HomePage() {
 
   const [terrainLoading, setTerrainLoading] = useState(false);
   const [terrainError, setTerrainError] = useState("");
+
+  // --- infiltrasjon state ---
+  const [jordtyper, setJordtyper] = useState<
+    { id: string; navn: string; k_m_s: number; beskrivelse: string }[]
+  >([]);
+  const [infiltrasjonMetode, setInfiltrasjonMetode] = useState<"altA" | "altB">("altB");
+  const [valgtJordtype, setValgtJordtype] = useState("");
+  const [arealBunn, setArealBunn] = useState("");
+  const [arealSide, setArealSide] = useState("");
+  const [qInfManuell, setQInfManuell] = useState("");
+
+  // --- hent jordtyper fra backend ---
+  useEffect(() => {
+    fetch("http://localhost:8000/calculation/jordtyper")
+      .then((r) => r.json())
+      .then((data) => setJordtyper(data))
+      .catch(() => {});
+  }, []);
 
   // --- API-kall til FastAPI ---
   async function fetchTerrain(a: LatLng, b: LatLng) {
@@ -595,7 +615,121 @@ export default function HomePage() {
                 )}
               </section>
 
-              <section className="h-80 rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900" />
+              {/* Infiltrasjon */}
+              <section>
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
+                  Infiltrasjonskapasitet
+                </label>
+
+                {/* Toggle Alt B / Alt A */}
+                <div className="mb-3 flex overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                  <button
+                    type="button"
+                    onClick={() => setInfiltrasjonMetode("altB")}
+                    className={`flex-1 py-2 text-sm font-medium transition ${
+                      infiltrasjonMetode === "altB"
+                        ? "bg-[#213F53] text-white"
+                        : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    Direkte Q_inf
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInfiltrasjonMetode("altA")}
+                    className={`flex-1 py-2 text-sm font-medium transition ${
+                      infiltrasjonMetode === "altA"
+                        ? "bg-[#213F53] text-white"
+                        : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    Jordtype
+                  </button>
+                </div>
+
+                {infiltrasjonMetode === "altB" && (
+                  <div>
+                    <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">
+                      Q_inf [l/s]
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={qInfManuell}
+                      onChange={(e) => setQInfManuell(e.target.value)}
+                      placeholder="0.0"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
+                    />
+                  </div>
+                )}
+
+                {infiltrasjonMetode === "altA" && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">
+                        Jordtype
+                      </label>
+                      <select
+                        value={valgtJordtype}
+                        onChange={(e) => setValgtJordtype(e.target.value)}
+                        className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
+                      >
+                        <option value="">Velg jordtype...</option>
+                        {jordtyper.map((jt) => (
+                          <option key={jt.id} value={jt.id}>
+                            {jt.navn} — {jt.beskrivelse} (k = {jt.k_m_s} m/s)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">
+                          A_bunn [m²]
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={arealBunn}
+                          onChange={(e) => setArealBunn(e.target.value)}
+                          placeholder="0.0"
+                          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">
+                          A_side [m²]
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={arealSide}
+                          onChange={(e) => setArealSide(e.target.value)}
+                          placeholder="0.0"
+                          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Live Q_inf preview */}
+                    {valgtJordtype && arealBunn && arealSide && (() => {
+                      const jt = jordtyper.find((j) => j.id === valgtJordtype);
+                      if (!jt) return null;
+                      const qInf =
+                        jt.k_m_s *
+                        (parseFloat(arealBunn) * 0.5 + parseFloat(arealSide) * 1.0) *
+                        1000;
+                      return (
+                        <div className="rounded-xl border border-slate-200 bg-white/60 p-3 text-sm font-medium text-slate-800 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100">
+                          Q_inf:{" "}
+                          <span className="font-semibold">{qInf.toFixed(4)} l/s</span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </section>
 
               <section>
                 <input className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700" />

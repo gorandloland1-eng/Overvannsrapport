@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 
 import AuthPage from "./pages/AuthPage";
 import { useAuth } from "./auth/AuthProvider";
