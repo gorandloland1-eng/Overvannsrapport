@@ -12,6 +12,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase"; // sørg for at auth eksporteres fra firebase-fila deres
 import { useNavigate, Link } from "react-router-dom";
+import { Map, Table2 } from "lucide-react";
 
 type WeatherStation = {
   id: string;
@@ -281,14 +282,14 @@ export default function HomePage() {
       <header className="sticky top-0 z-[9999] w-full bg-[#213F53] dark:bg-slate-950">
         <div className="flex h-16 w-full items-center justify-between px-5">
           {/* Left */}
-           <Link to="/" className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3">
             <Link to="/" className="flex items-center">
-  <img
-    src={logo}
-    alt="Trygt Overvann logo"
-    className="h-10 w-auto object-contain cursor-pointer"
-  />
-</Link>
+              <img
+                src={logo}
+                alt="Trygt Overvann logo"
+                className="h-10 w-auto object-contain cursor-pointer"
+              />
+            </Link>
 
             <div className="text-lg font-semibold text-white">
               Trygt Overvann AS
@@ -309,39 +310,39 @@ export default function HomePage() {
           {/* Right (Profile + dropdown) */}
           <div className="relative">
             <button
-  ref={buttonRef}
-  onClick={() => setMenuOpen((v) => !v)}
-  className={`flex h-10 w-10 items-center justify-center overflow-hidden rounded-full text-white transition hover:opacity-90 ${
-    user?.photoURL ? "" : "border-[3px] border-white hover:bg-white/10"
-  }`}
-  aria-label="Profilmeny"
-  aria-expanded={menuOpen}
->
-  {user?.photoURL ? (
-    <img
-      src={user.photoURL}
-      alt="Profilbilde"
-      className="h-full w-full object-cover"
-    />
-  ) : (
-    <svg width="35" height="35" viewBox="0 0 24 24" aria-hidden="true">
-      <defs>
-        <clipPath id="avatarClip">
-          <circle cx="12" cy="12" r="10.2" />
-        </clipPath>
-      </defs>
+              ref={buttonRef}
+              onClick={() => setMenuOpen((v) => !v)}
+              className={`flex h-10 w-10 items-center justify-center overflow-hidden rounded-full text-white transition hover:opacity-90 ${
+                user?.photoURL ? "" : "border-[3px] border-white hover:bg-white/10"
+              }`}
+              aria-label="Profilmeny"
+              aria-expanded={menuOpen}
+            >
+              {user?.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt="Profilbilde"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <svg width="35" height="35" viewBox="0 0 24 24" aria-hidden="true">
+                  <defs>
+                    <clipPath id="avatarClip">
+                      <circle cx="12" cy="12" r="10.2" />
+                    </clipPath>
+                  </defs>
 
-      <g clipPath="url(#avatarClip)" transform="translate(0,3)">
-        <rect x="0" y="18.5" width="24" height="6" fill="currentColor" />
-        <circle cx="12" cy="8" r="4" fill="currentColor" />
-        <path
-          d="M4.2 19.2c1.4-4.2 5.1-6.5 7.8-6.5s6.4 2.3 7.8 6.5"
-          fill="currentColor"
-        />
-      </g>
-    </svg>
-  )}
-</button>
+                  <g clipPath="url(#avatarClip)" transform="translate(0,3)">
+                    <rect x="0" y="18.5" width="24" height="6" fill="currentColor" />
+                    <circle cx="12" cy="8" r="4" fill="currentColor" />
+                    <path
+                      d="M4.2 19.2c1.4-4.2 5.1-6.5 7.8-6.5s6.4 2.3 7.8 6.5"
+                      fill="currentColor"
+                    />
+                  </g>
+                </svg>
+              )}
+            </button>
 
             {menuOpen && (
               <div
@@ -350,23 +351,23 @@ export default function HomePage() {
               >
                 {/* Header */}
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-               <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-300 bg-white text-sm font-semibold text-black dark:border-slate-600 dark:bg-slate-700 dark:text-white">
-  {user?.photoURL ? (
-    <img
-      src={user.photoURL}
-      alt="Profilbilde"
-      className="h-full w-full object-cover"
-    />
-  ) : user?.displayName ? (
-    user.displayName
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-  ) : (
-    user?.email?.charAt(0).toUpperCase()
-  )}
-</div>
+                  <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-300 bg-white text-sm font-semibold text-black dark:border-slate-600 dark:bg-slate-700 dark:text-white">
+                    {user?.photoURL ? (
+                      <img
+                        src={user.photoURL}
+                        alt="Profilbilde"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : user?.displayName ? (
+                      user.displayName
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase()
+                    ) : (
+                      user?.email?.charAt(0).toUpperCase()
+                    )}
+                  </div>
 
                   {/* Navn */}
                   <div className="flex flex-col">
@@ -379,9 +380,9 @@ export default function HomePage() {
                 {/* Items */}
                 <button
                   onClick={() => {
-  setMenuOpen(false);
-  navigate("/profil");
-}}
+                    setMenuOpen(false);
+                    navigate("/profil");
+                  }}
                   className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
@@ -482,28 +483,28 @@ export default function HomePage() {
                 >
                   <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
                     <span className="inline-flex h-5 w-5 items-center justify-center">
-                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
-  <path
-    d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  />
-  <path
-    d="M16 17l5-5-5-5"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  />
-  <path
-    d="M21 12H9"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-  />
-</svg>
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+                        <path
+                          d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M16 17l5-5-5-5"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M21 12H9"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                      </svg>
                     </span>
                     <span className="text-sm font-medium">Logg ut</span>
                   </div>
@@ -797,34 +798,40 @@ export default function HomePage() {
 
           {/* Right panel */}
           <section className="order-1 h-full lg:order-2 flex flex-col">
-            {/* Picker */}
-            <div className="flex gap-2 border-b border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
-              <button
-                type="button"
-                onClick={() => setRightPanelView("map")}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                  rightPanelView === "map"
-                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
-                    : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                }`}
-              >
-                Kart
-              </button>
+            <div className="flex-1 relative">
+              {/* Flytende picker på kartet / tabellen */}
+              <div className="absolute left-16 top-3 z-[1000]">
+                <div className="flex overflow-hidden rounded-xl border border-slate-200 bg-white/95 shadow-lg backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
+                  <button
+                    type="button"
+                    onClick={() => setRightPanelView("map")}
+                    className={`flex items-center justify-center px-4 py-2 transition ${
+                      rightPanelView === "map"
+                        ? "bg-[#213F53] text-white"
+                        : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                    }`}
+                    aria-label="Kartvisning"
+                    title="Kart"
+                  >
+                    <Map size={18} />
+                  </button>
 
-              <button
-                type="button"
-                onClick={() => setRightPanelView("ivf")}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                  rightPanelView === "ivf"
-                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
-                    : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                }`}
-              >
-                IVF-tabell
-              </button>
-            </div>
+                  <button
+                    type="button"
+                    onClick={() => setRightPanelView("ivf")}
+                    className={`flex items-center justify-center px-4 py-2 transition ${
+                      rightPanelView === "ivf"
+                        ? "bg-[#213F53] text-white"
+                        : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                    }`}
+                    aria-label="IVF-tabell"
+                    title="IVF-tabell"
+                  >
+                    <Table2 size={18} />
+                  </button>
+                </div>
+              </div>
 
-            <div className="flex-1">
               {rightPanelView === "map" && (
                 <div className="h-full w-full">
                   <MapContainer
@@ -863,7 +870,7 @@ export default function HomePage() {
               )}
 
               {rightPanelView === "ivf" && (
-                <div className="h-full overflow-auto bg-white p-4 dark:bg-slate-950">
+                <div className="h-full overflow-auto bg-white p-4 pt-20 dark:bg-slate-950">
                   <div className="mb-4">
                     <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                       IVF-tabell
