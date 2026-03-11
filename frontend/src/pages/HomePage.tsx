@@ -116,36 +116,36 @@ export default function HomePage() {
 
   // Hent IVF-data for valgt værstasjon
   useEffect(() => {
-  async function fetchIvf() {
-    if (!selectedWeatherStation) return;
+    async function fetchIvf() {
+      if (!selectedWeatherStation) return;
 
-    setIvfLoading(true);
-    setIvfError("");
+      setIvfLoading(true);
+      setIvfError("");
 
-    try {
-      const res = await fetch(
-        `http://localhost:8000/ivf/${selectedWeatherStation}`
-      );
+      try {
+        const res = await fetch(
+          `http://localhost:8000/ivf/ivf/${selectedWeatherStation}`
+        );
 
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(txt || "Kunne ikke hente IVF-data");
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(txt || "Kunne ikke hente IVF-data");
+        }
+
+        const data = await res.json();
+        setIvfData(data);
+      } catch (err) {
+        setIvfError(
+          err instanceof Error ? err.message : "Feil ved henting av IVF-data"
+        );
+        setIvfData(null);
+      } finally {
+        setIvfLoading(false);
       }
-
-      const data = await res.json();
-      setIvfData(data);
-    } catch (err) {
-      setIvfError(
-        err instanceof Error ? err.message : "Feil ved henting av IVF-data"
-      );
-      setIvfData(null);
-    } finally {
-      setIvfLoading(false);
     }
-  }
 
-  fetchIvf();
-}, [selectedWeatherStation]);
+    fetchIvf();
+  }, [selectedWeatherStation]);
 
   // Klikk utenfor for å lukke menyer
   useEffect(() => {
@@ -193,7 +193,9 @@ export default function HomePage() {
   const [jordtyper, setJordtyper] = useState<
     { id: string; navn: string; k_m_s: number; beskrivelse: string }[]
   >([]);
-  const [infiltrasjonMetode, setInfiltrasjonMetode] = useState<"altA" | "altB">("altB");
+  const [infiltrasjonMetode, setInfiltrasjonMetode] = useState<"altA" | "altB">(
+    "altB"
+  );
   const [valgtJordtype, setValgtJordtype] = useState("");
   const [arealBunn, setArealBunn] = useState("");
   const [arealSide, setArealSide] = useState("");
@@ -766,12 +768,15 @@ export default function HomePage() {
                       if (!jt) return null;
                       const qInf =
                         jt.k_m_s *
-                        (parseFloat(arealBunn) * 0.5 + parseFloat(arealSide) * 1.0) *
+                        (parseFloat(arealBunn) * 0.5 +
+                          parseFloat(arealSide) * 1.0) *
                         1000;
                       return (
                         <div className="rounded-xl border border-slate-200 bg-white/60 p-3 text-sm font-medium text-slate-800 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100">
                           Q_inf:{" "}
-                          <span className="font-semibold">{qInf.toFixed(4)} l/s</span>
+                          <span className="font-semibold">
+                            {qInf.toFixed(4)} l/s
+                          </span>
                         </div>
                       );
                     })()}
