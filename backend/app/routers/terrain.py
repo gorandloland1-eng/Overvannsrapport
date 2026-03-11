@@ -21,6 +21,20 @@ def calculate_terrain(data: TwoPointRequest):
 
     tc = konsentrasjonstid_kirpich(lengde, hoydeforskjell)
 
+    print(f"{'='*30}")
+    print("Terrengdata:")
+    print(f"  Høyde 1: {elev1}")
+    print(f"  Høyde 2: {elev2}")
+    print(f"  Lengde: {lengde}")
+
+
+    print("------------------------------")
+
+    print(f"  Høydeforskjell: {hoydeforskjell} m")
+    print(f"  Lengde: {lengde} m")
+    print(f"  Konsentrasjonstid: {tc} min")
+    print(f"{'='*30}")
+
     return {
         "lengde_m": lengde,
         "hoydeforskjell_m": hoydeforskjell,

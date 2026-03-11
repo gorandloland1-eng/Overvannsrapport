@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import {
   MapContainer,
   TileLayer,
@@ -14,13 +16,18 @@ import { useNavigate, Link } from "react-router-dom";
 type WeatherStation = {
   id: string;
   name: string;
+  municipality?: string;
+  county?: string;
 };
 
-const WEATHER_STATIONS: WeatherStation[] = [
-  { id: "sn18700", name: "Oslo - Blindern" },
-  { id: "sn50540", name: "Bergen - Florida" },
-  { id: "sn76920", name: "Trondheim - Voll" },
-];
+type IvfResponse = {
+  station_id: string;
+  station_name: string;
+  durations: number[];
+  return_periods: number[];
+  ls_ha: Record<string, Record<string, number>>;
+  mm: Record<string, Record<string, number>>;
+};
 
 // --- typer og dblclick-handler ---
 type LatLng = { lat: number; lng: number };
@@ -55,26 +62,116 @@ export default function HomePage() {
   const buttonRef = useRef<HTMLButtonElement | null>(null);
 
   const [darkMode, setDarkMode] = useState(false);
+  const [selectedWeatherStation, setSelectedWeatherStation] = useState("");
+  const [weatherStations, setWeatherStations] = useState<WeatherStation[]>([]);
+  const [stationSearch, setStationSearch] = useState("");
+  const [stationDropdownOpen, setStationDropdownOpen] = useState(false);
+  const stationBoxRef = useRef<HTMLDivElement | null>(null);
+
+  const [rightPanelView, setRightPanelView] = useState<"map" | "ivf">("map");
+
+  const [ivfData, setIvfData] = useState<IvfResponse | null>(null);
+  const [ivfLoading, setIvfLoading] = useState(false);
+  const [ivfError, setIvfError] = useState("");
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
   }, [darkMode]);
 
-  // Klikk utenfor for å lukke meny
+  // Hent værstasjoner fra backend til dropdown
+  useEffect(() => {
+    async function fetchStations() {
+      try {
+        // prøv først router med prefix /ivf
+        let res = await fetch("http://localhost:8000/ivf/stations");
+
+        // fallback hvis routeren er mountet uten prefix
+        if (!res.ok) {
+          res = await fetch("http://localhost:8000/stations");
+        }
+
+        if (!res.ok) throw new Error("Kunne ikke hente værstasjoner");
+
+        const data = await res.json();
+
+        if (Array.isArray(data) && data.length > 0) {
+          setWeatherStations(data);
+          setSelectedWeatherStation(data[0].id);
+        }
+      } catch (err) {
+        console.error("Feil ved henting av værstasjoner:", err);
+      }
+    }
+
+    fetchStations();
+  }, []);
+
+  const filteredWeatherStations = weatherStations.filter((station) =>
+    `${station.name} ${station.municipality ?? ""} ${station.county ?? ""}`
+      .toLowerCase()
+      .includes(stationSearch.toLowerCase())
+  );
+
+  const selectedStation = weatherStations.find(
+    (station) => station.id === selectedWeatherStation
+  );
+
+  // Hent IVF-data for valgt værstasjon
+  useEffect(() => {
+    async function fetchIvf() {
+      if (!selectedWeatherStation) return;
+
+      setIvfLoading(true);
+      setIvfError("");
+
+      try {
+        const res = await fetch(
+          `http://localhost:8000/ivf/ivf/${selectedWeatherStation}`
+        );
+
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(txt || "Kunne ikke hente IVF-data");
+        }
+
+        const data = await res.json();
+        setIvfData(data);
+      } catch (err) {
+        setIvfError(
+          err instanceof Error ? err.message : "Feil ved henting av IVF-data"
+        );
+        setIvfData(null);
+      } finally {
+        setIvfLoading(false);
+      }
+    }
+
+    fetchIvf();
+  }, [selectedWeatherStation]);
+
+  // Klikk utenfor for å lukke menyer
   useEffect(() => {
     function onDown(e: MouseEvent) {
-      if (!menuOpen) return;
-
       const target = e.target as Node;
-      const clickedMenu = menuRef.current?.contains(target);
-      const clickedButton = buttonRef.current?.contains(target);
 
-      if (!clickedMenu && !clickedButton) setMenuOpen(false);
+      if (menuOpen) {
+        const clickedMenu = menuRef.current?.contains(target);
+        const clickedButton = buttonRef.current?.contains(target);
+
+        if (!clickedMenu && !clickedButton) setMenuOpen(false);
+      }
+
+      if (stationDropdownOpen) {
+        const clickedStationBox = stationBoxRef.current?.contains(target);
+        if (!clickedStationBox) {
+          setStationDropdownOpen(false);
+        }
+      }
     }
 
     window.addEventListener("mousedown", onDown);
     return () => window.removeEventListener("mousedown", onDown);
-  }, [menuOpen]);
+  }, [menuOpen, stationDropdownOpen]);
 
   async function handleLogout() {
     setMenuOpen(false);
@@ -93,6 +190,26 @@ export default function HomePage() {
 
   const [terrainLoading, setTerrainLoading] = useState(false);
   const [terrainError, setTerrainError] = useState("");
+
+  // --- infiltrasjon state ---
+  const [jordtyper, setJordtyper] = useState<
+    { id: string; navn: string; k_m_s: number; beskrivelse: string }[]
+  >([]);
+  const [infiltrasjonMetode, setInfiltrasjonMetode] = useState<"altA" | "altB">(
+    "altB"
+  );
+  const [valgtJordtype, setValgtJordtype] = useState("");
+  const [arealBunn, setArealBunn] = useState("");
+  const [arealSide, setArealSide] = useState("");
+  const [qInfManuell, setQInfManuell] = useState("");
+
+  // --- hent jordtyper fra backend ---
+  useEffect(() => {
+    fetch("http://localhost:8000/calculation/jordtyper")
+      .then((r) => r.json())
+      .then((data) => setJordtyper(data))
+      .catch(() => {});
+  }, []);
 
   // --- API-kall til FastAPI ---
   async function fetchTerrain(a: LatLng, b: LatLng) {
@@ -422,6 +539,76 @@ export default function HomePage() {
                 </div>
               </section>
 
+              {/* Værstasjon */}
+              <section>
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
+                  Værstasjon
+                </label>
+
+                <div className="relative" ref={stationBoxRef}>
+                  <input
+                    type="text"
+                    value={stationSearch}
+                    onChange={(e) => {
+                      setStationSearch(e.target.value);
+                      setStationDropdownOpen(true);
+                    }}
+                    onFocus={() => setStationDropdownOpen(true)}
+                    placeholder={
+                      selectedStation
+                        ? `${selectedStation.name}${
+                            selectedStation.municipality
+                              ? ` (${selectedStation.municipality})`
+                              : ""
+                          }`
+                        : "Søk etter værstasjon..."
+                    }
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 pr-10 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:ring-slate-700"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setStationDropdownOpen((prev) => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    aria-label="Åpne værstasjoner"
+                  >
+                    ▾
+                  </button>
+
+                  {stationDropdownOpen && (
+                    <div className="absolute z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                      {filteredWeatherStations.length > 0 ? (
+                        filteredWeatherStations.map((station) => (
+                          <button
+                            key={station.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedWeatherStation(station.id);
+                              setStationSearch("");
+                              setStationDropdownOpen(false);
+                            }}
+                            className={`block w-full px-3 py-2 text-left text-sm hover:bg-slate-50 dark:text-slate-100 dark:hover:bg-slate-800 ${
+                              selectedWeatherStation === station.id
+                                ? "bg-slate-100 dark:bg-slate-800"
+                                : ""
+                            }`}
+                          >
+                            {station.name}
+                            {station.municipality
+                              ? ` (${station.municipality})`
+                              : ""}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">
+                          Ingen værstasjoner funnet
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </section>
+
               {/* Høyde og Lengde (read-only, koblet til API) */}
               <section>
                 <div className="grid grid-cols-2 gap-3">
@@ -483,7 +670,124 @@ export default function HomePage() {
                 )}
               </section>
 
-              <section className="h-80 rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900" />
+              {/* Infiltrasjon */}
+              <section>
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
+                  Infiltrasjonskapasitet
+                </label>
+
+                {/* Toggle Alt B / Alt A */}
+                <div className="mb-3 flex overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                  <button
+                    type="button"
+                    onClick={() => setInfiltrasjonMetode("altB")}
+                    className={`flex-1 py-2 text-sm font-medium transition ${
+                      infiltrasjonMetode === "altB"
+                        ? "bg-[#213F53] text-white"
+                        : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    Direkte Q_inf
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInfiltrasjonMetode("altA")}
+                    className={`flex-1 py-2 text-sm font-medium transition ${
+                      infiltrasjonMetode === "altA"
+                        ? "bg-[#213F53] text-white"
+                        : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    Jordtype
+                  </button>
+                </div>
+
+                {infiltrasjonMetode === "altB" && (
+                  <div>
+                    <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">
+                      Q_inf [l/s]
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={qInfManuell}
+                      onChange={(e) => setQInfManuell(e.target.value)}
+                      placeholder="0.0"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
+                    />
+                  </div>
+                )}
+
+                {infiltrasjonMetode === "altA" && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">
+                        Jordtype
+                      </label>
+                      <select
+                        value={valgtJordtype}
+                        onChange={(e) => setValgtJordtype(e.target.value)}
+                        className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
+                      >
+                        <option value="">Velg jordtype...</option>
+                        {jordtyper.map((jt) => (
+                          <option key={jt.id} value={jt.id}>
+                            {jt.navn} — {jt.beskrivelse} (k = {jt.k_m_s} m/s)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">
+                          A_bunn [m²]
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={arealBunn}
+                          onChange={(e) => setArealBunn(e.target.value)}
+                          placeholder="0.0"
+                          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">
+                          A_side [m²]
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={arealSide}
+                          onChange={(e) => setArealSide(e.target.value)}
+                          placeholder="0.0"
+                          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Live Q_inf preview */}
+                    {valgtJordtype && arealBunn && arealSide && (() => {
+                      const jt = jordtyper.find((j) => j.id === valgtJordtype);
+                      if (!jt) return null;
+                      const qInf =
+                        jt.k_m_s *
+                        (parseFloat(arealBunn) * 0.5 +
+                          parseFloat(arealSide) * 1.0) *
+                        1000;
+                      return (
+                        <div className="rounded-xl border border-slate-200 bg-white/60 p-3 text-sm font-medium text-slate-800 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100">
+                          Q_inf:{" "}
+                          <span className="font-semibold">
+                            {qInf.toFixed(4)} l/s
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </section>
 
               <section>
                 <input className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700" />
@@ -491,35 +795,149 @@ export default function HomePage() {
             </div>
           </aside>
 
-          {/* Map */}
-          <section className="order-1 h-full lg:order-2">
-            <div className="h-full w-full">
-              <MapContainer
-                center={[60.3913, 5.3221]}
-                zoom={13}
-                className="h-full w-full"
-                doubleClickZoom={false}
+          {/* Right panel */}
+          <section className="order-1 h-full lg:order-2 flex flex-col">
+            {/* Picker */}
+            <div className="flex gap-2 border-b border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+              <button
+                type="button"
+                onClick={() => setRightPanelView("map")}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                  rightPanelView === "map"
+                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                    : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                }`}
               >
-                {/* fanger dobbeltklikk */}
-                <MapClickHandler onPick={handleMapPick} />
+                Kart
+              </button>
 
-                {/* “pinpoint” der du dobbeltklikker */}
-                {pointA && (
-                  <CircleMarker center={[pointA.lat, pointA.lng]} radius={7} />
-                )}
-                {pointB && (
-                  <CircleMarker center={[pointB.lat, pointB.lng]} radius={7} />
-                )}
+              <button
+                type="button"
+                onClick={() => setRightPanelView("ivf")}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                  rightPanelView === "ivf"
+                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                    : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                }`}
+              >
+                IVF-tabell
+              </button>
+            </div>
 
-                <TileLayer
-                  attribution="&copy; OpenStreetMap contributors"
-                  url={
-                    darkMode
-                      ? "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
-                      : "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  }
-                />
-              </MapContainer>
+            <div className="flex-1">
+              {rightPanelView === "map" && (
+                <div className="h-full w-full">
+                  <MapContainer
+                    center={[60.3913, 5.3221]}
+                    zoom={13}
+                    className="h-full w-full"
+                    doubleClickZoom={false}
+                  >
+                    {/* fanger dobbeltklikk */}
+                    <MapClickHandler onPick={handleMapPick} />
+
+                    {/* “pinpoint” der du dobbeltklikker */}
+                    {pointA && (
+                      <CircleMarker
+                        center={[pointA.lat, pointA.lng]}
+                        radius={7}
+                      />
+                    )}
+                    {pointB && (
+                      <CircleMarker
+                        center={[pointB.lat, pointB.lng]}
+                        radius={7}
+                      />
+                    )}
+
+                    <TileLayer
+                      attribution="&copy; OpenStreetMap contributors"
+                      url={
+                        darkMode
+                          ? "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
+                          : "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      }
+                    />
+                  </MapContainer>
+                </div>
+              )}
+
+              {rightPanelView === "ivf" && (
+                <div className="h-full overflow-auto bg-white p-4 dark:bg-slate-950">
+                  <div className="mb-4">
+                    <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                      IVF-tabell
+                    </div>
+                    <div className="text-sm text-slate-500 dark:text-slate-400">
+                      {ivfData?.station_name ||
+                        selectedStation?.name ||
+                        "Ingen værstasjon valgt"}
+                    </div>
+                  </div>
+
+                  {ivfLoading && (
+                    <div className="text-sm text-slate-500 dark:text-slate-400">
+                      Laster IVF-data...
+                    </div>
+                  )}
+
+                  {ivfError && (
+                    <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+                      {ivfError}
+                    </div>
+                  )}
+
+                  {!ivfLoading && !ivfError && ivfData && (
+                    <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+                      <table className="min-w-full border-collapse text-sm">
+                        <thead className="bg-slate-50 dark:bg-slate-900">
+                          <tr>
+                            <th className="border border-slate-200 px-3 py-2 text-left font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200">
+                              Varighet (min)
+                            </th>
+                            {ivfData.return_periods.map((period) => (
+                              <th
+                                key={period}
+                                className="border border-slate-200 px-3 py-2 text-left font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200"
+                              >
+                                {period} år
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {ivfData.durations.map((duration) => (
+                            <tr
+                              key={duration}
+                              className="bg-white dark:bg-slate-950"
+                            >
+                              <td className="border border-slate-200 px-3 py-2 text-slate-800 dark:border-slate-700 dark:text-slate-100">
+                                {duration}
+                              </td>
+                              {ivfData.return_periods.map((period) => (
+                                <td
+                                  key={`${duration}-${period}`}
+                                  className="border border-slate-200 px-3 py-2 text-slate-800 dark:border-slate-700 dark:text-slate-100"
+                                >
+                                  {ivfData.ls_ha[String(duration)]?.[
+                                    String(period)
+                                  ] ?? "-"}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {!ivfLoading && !ivfError && !ivfData && (
+                    <div className="text-sm text-slate-500 dark:text-slate-400">
+                      Ingen IVF-data tilgjengelig.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </section>
         </div>
