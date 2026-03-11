@@ -1,18 +1,18 @@
 === BACKEND ===
-## Installing backend: ##
+## --- Installing backend: --- ##
 python3 -m venv venv
 
-## Go into venv ##
+## --- Go into venv --- ##
 source venv/bin/activate
 
-## Accessing imports: ##
+## --- Accessing imports: --- ##
 pip install -r requirements.txt
 
-## STARTING THE BACKEND!!!!!!!!!!!! ##
+## --- STARTING THE BACKEND!!!!!!!!!!!! --- ##
 uvicorn app.main:app --reload
 
-## Go out of venv: ##
+## --- Go out of venv: --- ##
 deactivate
 
-## TEST BACKEND ENDPOINTS ##
+## --- TEST BACKEND ENDPOINTS --- ##
 http://127.0.0.1:8000/docs#/

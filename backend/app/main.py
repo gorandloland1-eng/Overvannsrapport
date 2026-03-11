@@ -17,13 +17,9 @@ app.add_middleware(
 )
 
 # --- Routers --- #
-app.include_router(ivf.router)
-app.include_router(calculation.router)
-app.include_router(terrain.router)
-
-@app.get("/")
-def root():
-    return {"Hello!!"}
+app.include_router(ivf.router, prefix="/ivf")
+app.include_router(calculation.router, prefix="/calculation")
+app.include_router(terrain.router, prefix="/terrain")
 
 @app.post("/generate-pdf/{project_name}")
 def generate_pdf(project_name: str):
