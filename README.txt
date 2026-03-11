@@ -1,5 +1,3 @@
-
-
 === BACKEND ===
 ## Installing backend: ##
 python3 -m venv venv
@@ -15,3 +13,6 @@ uvicorn app.main:app --reload
 
 ## Go out of venv: ##
 deactivate
+
+## TEST BACKEND ENDPOINTS ##
+http://127.0.0.1:8000/docs#/
