@@ -68,3 +68,7 @@ class PDFRequest(BaseModel):
     height: float
     length: float
     time_of_concentration: float
+
+    # --- Kirpich calculations --- #
+    elev1: float
+    elev2: float
