@@ -13,13 +13,9 @@ import { auth } from "../firebase"; // sørg for at auth eksporteres fra firebas
 type WeatherStation = {
   id: string;
   name: string;
+  municipality?: string;
+  county?: string;
 };
-
-const WEATHER_STATIONS: WeatherStation[] = [
-  { id: "sn18700", name: "Oslo - Blindern" },
-  { id: "sn50540", name: "Bergen - Florida" },
-  { id: "sn76920", name: "Trondheim - Voll" },
-];
 
 // --- typer og dblclick-handler ---
 type LatLng = { lat: number; lng: number };
@@ -53,26 +49,77 @@ export default function HomePage() {
   const buttonRef = useRef<HTMLButtonElement | null>(null);
 
   const [darkMode, setDarkMode] = useState(false);
+  const [selectedWeatherStation, setSelectedWeatherStation] = useState("");
+  const [weatherStations, setWeatherStations] = useState<WeatherStation[]>([]);
+  const [stationSearch, setStationSearch] = useState("");
+  const [stationDropdownOpen, setStationDropdownOpen] = useState(false);
+  const stationBoxRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
   }, [darkMode]);
 
-  // Klikk utenfor for å lukke meny
+  // Hent værstasjoner fra backend til dropdown
+  useEffect(() => {
+    async function fetchStations() {
+      try {
+        // prøv først router med prefix /ivf
+        let res = await fetch("http://localhost:8000/ivf/stations");
+
+        // fallback hvis routeren er mountet uten prefix
+        if (!res.ok) {
+          res = await fetch("http://localhost:8000/stations");
+        }
+
+        if (!res.ok) throw new Error("Kunne ikke hente værstasjoner");
+
+        const data = await res.json();
+
+        if (Array.isArray(data) && data.length > 0) {
+          setWeatherStations(data);
+          setSelectedWeatherStation(data[0].id);
+        }
+      } catch (err) {
+        console.error("Feil ved henting av værstasjoner:", err);
+      }
+    }
+
+    fetchStations();
+  }, []);
+
+  const filteredWeatherStations = weatherStations.filter((station) =>
+    `${station.name} ${station.municipality ?? ""} ${station.county ?? ""}`
+      .toLowerCase()
+      .includes(stationSearch.toLowerCase())
+  );
+
+  const selectedStation = weatherStations.find(
+    (station) => station.id === selectedWeatherStation
+  );
+
+  // Klikk utenfor for å lukke menyer
   useEffect(() => {
     function onDown(e: MouseEvent) {
-      if (!menuOpen) return;
-
       const target = e.target as Node;
-      const clickedMenu = menuRef.current?.contains(target);
-      const clickedButton = buttonRef.current?.contains(target);
 
-      if (!clickedMenu && !clickedButton) setMenuOpen(false);
+      if (menuOpen) {
+        const clickedMenu = menuRef.current?.contains(target);
+        const clickedButton = buttonRef.current?.contains(target);
+
+        if (!clickedMenu && !clickedButton) setMenuOpen(false);
+      }
+
+      if (stationDropdownOpen) {
+        const clickedStationBox = stationBoxRef.current?.contains(target);
+        if (!clickedStationBox) {
+          setStationDropdownOpen(false);
+        }
+      }
     }
 
     window.addEventListener("mousedown", onDown);
     return () => window.removeEventListener("mousedown", onDown);
-  }, [menuOpen]);
+  }, [menuOpen, stationDropdownOpen]);
 
   async function handleLogout() {
     setMenuOpen(false);
@@ -414,6 +461,76 @@ export default function HomePage() {
                 </div>
                 <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                   (F.eks. gårdsnr, bruksnr, postnr – kobles dynamisk senere)
+                </div>
+              </section>
+
+              {/* Værstasjon */}
+              <section>
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
+                  Værstasjon
+                </label>
+
+                <div className="relative" ref={stationBoxRef}>
+                  <input
+                    type="text"
+                    value={stationSearch}
+                    onChange={(e) => {
+                      setStationSearch(e.target.value);
+                      setStationDropdownOpen(true);
+                    }}
+                    onFocus={() => setStationDropdownOpen(true)}
+                    placeholder={
+                      selectedStation
+                        ? `${selectedStation.name}${
+                            selectedStation.municipality
+                              ? ` (${selectedStation.municipality})`
+                              : ""
+                          }`
+                        : "Søk etter værstasjon..."
+                    }
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 pr-10 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:ring-slate-700"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setStationDropdownOpen((prev) => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    aria-label="Åpne værstasjoner"
+                  >
+                    ▾
+                  </button>
+
+                  {stationDropdownOpen && (
+                    <div className="absolute z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                      {filteredWeatherStations.length > 0 ? (
+                        filteredWeatherStations.map((station) => (
+                          <button
+                            key={station.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedWeatherStation(station.id);
+                              setStationSearch("");
+                              setStationDropdownOpen(false);
+                            }}
+                            className={`block w-full px-3 py-2 text-left text-sm hover:bg-slate-50 dark:text-slate-100 dark:hover:bg-slate-800 ${
+                              selectedWeatherStation === station.id
+                                ? "bg-slate-100 dark:bg-slate-800"
+                                : ""
+                            }`}
+                          >
+                            {station.name}
+                            {station.municipality
+                              ? ` (${station.municipality})`
+                              : ""}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">
+                          Ingen værstasjoner funnet
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </section>
 
