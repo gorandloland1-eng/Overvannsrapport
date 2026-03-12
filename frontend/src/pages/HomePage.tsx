@@ -803,9 +803,9 @@ export default function HomePage() {
 
       {/* Main content */}
       <main className="h-[calc(100dvh-4rem)] bg-[#F6F8FF] dark:bg-slate-950">
-        <div className="grid h-full grid-cols-1 lg:grid-cols-[320px_1fr]">
+        <div className="grid h-full grid-cols-1 overflow-hidden lg:grid-cols-[320px_1fr]">
           {/* Left panel */}
-          <aside className="order-2 border-t border-slate-200 bg-[#F6F8FF] p-4 lg:order-1 lg:border-r lg:border-t-0 dark:border-slate-800 dark:bg-slate-950">
+          <aside className="order-2 overflow-y-auto border-t border-slate-200 bg-[#F6F8FF] p-4 lg:order-1 lg:border-r lg:border-t-0 dark:border-slate-800 dark:bg-slate-950">
             <div className="space-y-5">
               <section>
                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
