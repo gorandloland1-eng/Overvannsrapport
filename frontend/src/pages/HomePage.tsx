@@ -75,6 +75,11 @@ export default function HomePage() {
   const [ivfLoading, setIvfLoading] = useState(false);
   const [ivfError, setIvfError] = useState("");
 
+  const [areal, setAreal] = useState("200");
+  const [returperiode, setReturperiode] = useState("5");
+  const [klimafaktor, setKlimafaktor] = useState("1.0");
+  const [maksPaslipp, setMaksPaslipp] = useState("0.0");
+
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
   }, [darkMode]);
@@ -387,7 +392,6 @@ export default function HomePage() {
                 >
                   <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
                     <span className="inline-flex h-5 w-5 items-center justify-center">
-                      {/* icon */}
                       <svg
                         viewBox="0 0 24 24"
                         width="18"
@@ -790,8 +794,79 @@ export default function HomePage() {
                 )}
               </section>
 
+              {/* Nye inputfelt */}
               <section>
-                <input className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
+                      Areal
+                    </label>
+                    <input
+                      type="number"
+                      value={areal}
+                      onChange={(e) => setAreal(e.target.value)}
+                      placeholder="200"
+                      className="h-12 w-full rounded-[22px] border border-slate-200 bg-white px-5 text-base text-slate-900 outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
+                      Returperiode
+                    </label>
+                    <select
+                      value={returperiode}
+                      onChange={(e) => setReturperiode(e.target.value)}
+                      className="h-12 w-full rounded-[22px] border border-slate-200 bg-white px-5 text-base text-slate-900 outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
+                    >
+                      <option value="2">2 år</option>
+                      <option value="5">5 år</option>
+                      <option value="10">10 år</option>
+                      <option value="20">20 år</option>
+                      <option value="25">25 år</option>
+                      <option value="50">50 år</option>
+                      <option value="100">100 år</option>
+                      <option value="200">200 år</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
+                      Klimafaktor
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={klimafaktor}
+                      onChange={(e) => setKlimafaktor(e.target.value)}
+                      placeholder="1.0"
+                      className="h-12 w-full rounded-[22px] border border-slate-200 bg-white px-5 text-base text-slate-900 outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
+                      Maks påslipp
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={maksPaslipp}
+                      onChange={(e) => setMaksPaslipp(e.target.value)}
+                      placeholder="0.0"
+                      className="h-12 w-full rounded-[22px] border border-slate-200 bg-white px-5 text-base text-slate-900 outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    type="button"
+                    className="h-14 w-full rounded-[16px] bg-slate-300 text-base font-semibold text-black transition hover:bg-slate-400 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600"
+                  >
+                    Generer PDF
+                  </button>
+                </div>
               </section>
             </div>
           </aside>
@@ -840,10 +915,8 @@ export default function HomePage() {
                     className="h-full w-full"
                     doubleClickZoom={false}
                   >
-                    {/* fanger dobbeltklikk */}
                     <MapClickHandler onPick={handleMapPick} />
 
-                    {/* “pinpoint” der du dobbeltklikker */}
                     {pointA && (
                       <CircleMarker
                         center={[pointA.lat, pointA.lng]}
