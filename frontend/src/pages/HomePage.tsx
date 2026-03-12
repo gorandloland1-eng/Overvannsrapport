@@ -1345,47 +1345,62 @@ export default function HomePage() {
                   )}
 
                   {!ivfLoading && !ivfError && ivfData && (
-                    <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
-                      <table className="min-w-full border-collapse text-sm">
-                        <thead className="bg-slate-50 dark:bg-slate-900">
-                          <tr>
-                            <th className="border border-slate-200 px-3 py-2 text-left font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200">
-                              Varighet (min)
+                    <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+                      <table className="min-w-full border-collapse text-xs">
+                        <thead>
+                          <tr className="bg-blue-100 dark:bg-slate-800">
+                            <th className="border-r border-b border-slate-400 px-3 py-2"></th>
+                            <th
+                              colSpan={ivfData.durations.length}
+                              className="border-b border-slate-400 px-3 py-2 text-left font-semibold text-slate-700 dark:text-slate-200"
+                            >
+                              Varigheter (minutter)
                             </th>
-                            {ivfData.return_periods.map((period) => (
+                          </tr>
+
+                          <tr className="bg-blue-100 dark:bg-slate-800">
+                            <th className="border-r border-b border-slate-400 px-3 py-2 text-left font-semibold text-slate-700 dark:text-slate-200">
+                              Gjentaksintervall (år)
+                            </th>
+
+                            {ivfData.durations.map((duration) => (
                               <th
-                                key={period}
-                                className="border border-slate-200 px-3 py-2 text-left font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200"
+                                key={duration}
+                                className="border-r border-b border-slate-400 px-2 py-2 text-center font-semibold text-slate-700 last:border-r-0 dark:text-slate-200"
                               >
-                                {period} år
+                                {duration}
                               </th>
                             ))}
                           </tr>
                         </thead>
+
                         <tbody>
-                          {ivfData.durations.map((duration) => (
+                          {ivfData.return_periods.map((period, i) => (
                             <tr
-                              key={duration}
-                              className="bg-white dark:bg-slate-950"
+                              key={period}
+                              className={
+                                i % 2 === 0
+                                  ? "bg-white dark:bg-slate-950"
+                                  : "bg-slate-50 dark:bg-slate-900"
+                              }
                             >
-                              <td className="border border-slate-200 px-3 py-2 text-slate-800 dark:border-slate-700 dark:text-slate-100">
-                                {duration}
+                              <td className="border-r border-b border-slate-300 px-3 py-2 font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200">
+                                {period}
                               </td>
-                              {ivfData.return_periods.map((period) => (
+
+                              {ivfData.durations.map((duration) => (
                                 <td
-                                  key={`${duration}-${period}`}
-                                  className="border border-slate-200 px-3 py-2 text-slate-800 dark:border-slate-700 dark:text-slate-100"
+                                  key={`${period}-${duration}`}
+                                  className="border-r border-b border-slate-300 px-2 py-2 text-center text-slate-700 last:border-r-0 dark:border-slate-700 dark:text-slate-200"
                                 >
-                                  {ivfData.ls_ha[String(duration)]?.[
-                                    String(period)
-                                  ] ?? "-"}
+                                  {ivfData.ls_ha[String(duration)]?.[String(period)] ?? "-"}
                                 </td>
                               ))}
                             </tr>
                           ))}
                         </tbody>
                       </table>
-                    </div>
+                    </div>  
                   )}
 
                   {!ivfLoading && !ivfError && !ivfData && (
