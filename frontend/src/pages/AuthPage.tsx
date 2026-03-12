@@ -1,7 +1,11 @@
 // @ts-nocheck
 
 import { useState } from "react";
-import { loginWithEmail, registerWithEmail } from "../auth/authActions";
+import {
+  loginWithEmail,
+  registerWithEmail,
+  resetPassword,
+} from "../auth/authActions";
 import { updateProfile } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
@@ -20,13 +24,16 @@ export default function AuthPage() {
   const [repeatPassword, setRepeatPassword] = useState("");
 
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   const isLogin = mode === "login";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setInfo("");
 
     if (!isLogin) {
       if (!firstName.trim() || !lastName.trim()) {
@@ -52,12 +59,10 @@ export default function AuthPage() {
         const userCredential = await registerWithEmail(email, password);
         const user = userCredential.user;
 
-        // Sett displayName i Firebase Auth
         await updateProfile(user, {
           displayName: `${firstName.trim()} ${lastName.trim()}`,
         });
 
-        // Lagre profil i Firestore: users/{uid}
         await setDoc(doc(db, "users", user.uid), {
           uid: user.uid,
           firstName: firstName.trim(),
@@ -70,6 +75,31 @@ export default function AuthPage() {
       setError(e instanceof Error ? e.message : "Noe gikk galt");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleForgotPassword() {
+    setError("");
+    setInfo("");
+
+    if (!email.trim()) {
+      setError("Skriv inn e-postadressen din først");
+      return;
+    }
+
+    setResetLoading(true);
+
+    try {
+      await resetPassword(email.trim());
+      setInfo("Tilbakestillingslenke er sendt til e-postadressen din.");
+    } catch (e: unknown) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Kunne ikke sende tilbakestillingsmail"
+      );
+    } finally {
+      setResetLoading(false);
     }
   }
 
@@ -91,6 +121,7 @@ export default function AuthPage() {
               onClick={() => {
                 setMode("login");
                 setError("");
+                setInfo("");
               }}
               role="tab"
               aria-selected={isLogin}
@@ -104,6 +135,7 @@ export default function AuthPage() {
               onClick={() => {
                 setMode("signup");
                 setError("");
+                setInfo("");
               }}
               role="tab"
               aria-selected={!isLogin}
@@ -150,6 +182,19 @@ export default function AuthPage() {
               autoComplete={isLogin ? "current-password" : "new-password"}
             />
 
+            {isLogin && (
+              <div className="auth-helperRow">
+                <button
+                  type="button"
+                  className="auth-linkBtn"
+                  onClick={handleForgotPassword}
+                  disabled={resetLoading}
+                >
+                  {resetLoading ? "Sender..." : "Glemt passord?"}
+                </button>
+              </div>
+            )}
+
             {!isLogin && (
               <input
                 className="auth-input"
@@ -162,6 +207,7 @@ export default function AuthPage() {
             )}
 
             {error && <div className="auth-error">{error}</div>}
+            {info && <div className="auth-info">{info}</div>}
 
             <button className="auth-submit" disabled={loading}>
               {loading ? "Laster..." : isLogin ? "Logg inn" : "Opprett bruker"}

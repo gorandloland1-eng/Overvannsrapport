@@ -149,3 +149,39 @@
     height: 260px;
   }
 }
+
+.auth-helperRow{
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -2px;
+}
+
+.auth-linkBtn{
+  border: 0;
+  background: transparent;
+  color: #2f6f85;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 0 6px 0;
+}
+
+.auth-linkBtn:hover{
+  text-decoration: underline;
+}
+
+.auth-linkBtn:disabled{
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-info{
+  width: 100%;
+  color: #0f5132;
+  background: rgba(25, 135, 84, 0.08);
+  border: 1px solid rgba(25, 135, 84, 0.22);
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+}
