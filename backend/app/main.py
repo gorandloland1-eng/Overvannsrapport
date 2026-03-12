@@ -2,8 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from app.routers import ivf, calculation, terrain, pdf
+<<<<<<< Updated upstream
 from app import matrikkel_api
 from app.pdf_generator import generate_project_pdf
+=======
+>>>>>>> Stashed changes
 import os
 
 app = FastAPI()
