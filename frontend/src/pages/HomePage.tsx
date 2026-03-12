@@ -75,7 +75,7 @@ function MapLayerToggle({
   onChange: (layer: "kart" | "terreng" | "satellitt") => void;
 }) {
   return (
-    <div className="absolute left-56 top-2 z-[1000] flex gap-2 rounded-xl bg-white/35 p-2 backdrop-blur-sm dark:bg-slate-900/30">
+    <div className="absolute right-3 top-1/2 z-[1000] flex -translate-y-1/2 flex-col gap-2 rounded-xl bg-white/35 p-2 backdrop-blur-sm dark:bg-slate-900/30">
       <button
         type="button"
         onClick={() => onChange("kart")}
