@@ -5,6 +5,8 @@ import {
   TileLayer,
   useMapEvents,
   CircleMarker,
+  GeoJSON,
+  useMap,
 } from "react-leaflet";
 import logo from "../assets/logo.png";
 import { useEffect, useRef, useState } from "react";
@@ -35,12 +37,25 @@ type LatLng = { lat: number; lng: number };
 
 function MapClickHandler({
   onPick,
+  onSingleClick,
+  onCancelSingleClick,
+  onMouseMove,
 }: {
   onPick: (lat: number, lng: number) => void;
+  onSingleClick: (lat: number, lng: number) => void;
+  onCancelSingleClick: () => void;
+  onMouseMove: (lat: number, lng: number) => void;
 }) {
   const map = useMapEvents({
+    click(e) {
+      onSingleClick(e.latlng.lat, e.latlng.lng);
+    },
     dblclick(e) {
+      onCancelSingleClick();
       onPick(e.latlng.lat, e.latlng.lng);
+    },
+    mousemove(e) {
+      onMouseMove(e.latlng.lat, e.latlng.lng);
     },
   });
 
@@ -50,6 +65,177 @@ function MapClickHandler({
   }, [map]);
 
   return null;
+}
+
+function MapLayerToggle({
+  layer,
+  onChange,
+}: {
+  layer: "kart" | "terreng" | "satellitt";
+  onChange: (layer: "kart" | "terreng" | "satellitt") => void;
+}) {
+  return (
+    <div className="absolute right-3 top-1/2 z-[1000] flex -translate-y-1/2 flex-col gap-2 rounded-xl bg-white/35 p-2 backdrop-blur-sm dark:bg-slate-900/30">
+      <button
+        type="button"
+        onClick={() => onChange("kart")}
+        className={`h-14 w-16 overflow-hidden rounded-lg border-2 shadow transition ${
+          layer === "kart"
+            ? "border-black ring-2 ring-white/90"
+            : "border-gray-600 bg-white/85 opacity-90 hover:opacity-100"
+        }`}
+        title="Kart"
+      >
+        <img
+          src="https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/12/1164/2154.png"
+          alt="Kartlag"
+          className="h-full w-full object-cover"
+        />
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("terreng")}
+        className={`h-14 w-16 overflow-hidden rounded-lg border-2 shadow transition ${
+          layer === "terreng"
+            ? "border-black ring-2 ring-white/90"
+            : "border-gray-600 bg-white/85 opacity-90 hover:opacity-100"
+        }`}
+        title="Terreng"
+      >
+        <img
+          src="https://a.tile.opentopomap.org/12/1164/2154.png"
+          alt="Terrenglag"
+          className="h-full w-full object-cover"
+        />
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("satellitt")}
+        className={`h-14 w-16 overflow-hidden rounded-lg border-2 shadow transition ${
+          layer === "satellitt"
+            ? "border-black ring-2 ring-white/90"
+            : "border-gray-600 bg-white/85 opacity-90 hover:opacity-100"
+        }`}
+        title="Satellitt"
+      >
+        <img
+          src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/12/1164/2154"
+          alt="Satellittlag"
+          className="h-full w-full object-cover"
+        />
+      </button>
+    </div>
+  );
+}
+
+function MapScale() {
+  const map = useMap();
+  const ref = useRef<HTMLDivElement>(null);
+  const [info, setInfo] = useState({ ratio: 0, barWidth: 80, barLabel: "100 m" });
+  useEffect(() => {
+    function update() {
+      const zoom = map.getZoom();
+      const center = map.getCenter();
+      const metersPerPixel =
+        (156543.03392 * Math.cos((center.lat * Math.PI) / 180)) /
+        Math.pow(2, zoom);
+
+      const ratio = Math.round(metersPerPixel / (0.0254 / 96));
+
+      const maxMeters = metersPerPixel * 80;
+      const exp = Math.floor(Math.log10(maxMeters));
+      const d = Math.pow(10, exp);
+      const barMeters =
+        maxMeters >= 5 * d ? 5 * d : maxMeters >= 2 * d ? 2 * d : d;
+      const barLabel =
+        barMeters >= 1000 ? `${barMeters / 1000} km` : `${barMeters} m`;
+      const barWidth = Math.round(barMeters / metersPerPixel);
+
+      setInfo({ ratio, barWidth, barLabel });
+    }
+
+    map.on("zoomend moveend", update);
+    update();
+    return () => { map.off("zoomend moveend", update); };
+  }, [map]);
+
+  useEffect(() => {
+    if (ref.current) L.DomEvent.disableClickPropagation(ref.current);
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className="absolute bottom-3 left-1/2 z-1000 flex items-center gap-3 rounded-lg border border-white/40 bg-white/80 px-3 py-1.5 shadow backdrop-blur-sm select-none"
+      style={{ transform: "translateX(-50%)" }}
+    >
+      <div className="flex flex-col items-center gap-0.5">
+        <div
+          className="border-b-2 border-l-2 border-r-2 border-slate-600"
+          style={{ width: info.barWidth, height: 6 }}
+        />
+        <span className="text-[10px] font-medium text-slate-600">
+          {info.barLabel}
+        </span>
+      </div>
+      <div className="border-l border-slate-300 pl-3 text-[10px] font-semibold text-slate-600">
+        1 : {info.ratio.toLocaleString("no-NO")}
+      </div>
+    </div>
+  );
+}
+
+function latLngToUtm33(lat: number, lng: number) {
+  const a = 6378137.0;
+  const f = 1 / 298.257223563;
+  const k0 = 0.9996;
+  const e2 = f * (2 - f);
+  const ep2 = e2 / (1 - e2);
+  const lon0 = (15 * Math.PI) / 180;
+  const latRad = (lat * Math.PI) / 180;
+  const lonRad = (lng * Math.PI) / 180;
+  const sinLat = Math.sin(latRad);
+  const cosLat = Math.cos(latRad);
+  const tanLat = Math.tan(latRad);
+  const n = a / Math.sqrt(1 - e2 * sinLat * sinLat);
+  const t = tanLat * tanLat;
+  const c = ep2 * cosLat * cosLat;
+  const aTerm = cosLat * (lonRad - lon0);
+
+  const m =
+    a *
+    ((1 - e2 / 4 - (3 * e2 * e2) / 64 - (5 * e2 * e2 * e2) / 256) * latRad -
+      ((3 * e2) / 8 + (3 * e2 * e2) / 32 + (45 * e2 * e2 * e2) / 1024) *
+        Math.sin(2 * latRad) +
+      ((15 * e2 * e2) / 256 + (45 * e2 * e2 * e2) / 1024) *
+        Math.sin(4 * latRad) -
+      ((35 * e2 * e2 * e2) / 3072) * Math.sin(6 * latRad));
+
+  const easting =
+    k0 *
+      n *
+      (aTerm +
+        ((1 - t + c) * Math.pow(aTerm, 3)) / 6 +
+        ((5 - 18 * t + t * t + 72 * c - 58 * ep2) * Math.pow(aTerm, 5)) / 120) +
+    500000;
+
+  let northing =
+    k0 *
+    (m +
+      n *
+        tanLat *
+        ((aTerm * aTerm) / 2 +
+          ((5 - t + 9 * c + 4 * c * c) * Math.pow(aTerm, 4)) / 24 +
+          ((61 - 58 * t + t * t + 600 * c - 330 * ep2) *
+            Math.pow(aTerm, 6)) /
+            720));
+
+  if (lat < 0) northing += 10000000;
+
+  return {
+    northing: Math.round(northing),
+    easting: Math.round(easting - 500000),
+  };
 }
 
 export default function HomePage() {
@@ -196,6 +382,21 @@ export default function HomePage() {
 
   const [terrainLoading, setTerrainLoading] = useState(false);
   const [terrainError, setTerrainError] = useState("");
+  const [mapLayer, setMapLayer] = useState<"kart" | "terreng" | "satellitt">(
+    "kart"
+  );
+  const [eiendomGrense, setEiendomGrense] = useState<object | null>(null);
+  const [eiendomAdresse, setEiendomAdresse] = useState<string | null>(null);
+  const [eiendomMatrikkel, setEiendomMatrikkel] = useState<{
+    gnr: number;
+    bnr: number;
+    kommunenummer: string;
+  } | null>(null);
+  const [eiendomKoordinat, setEiendomKoordinat] = useState<LatLng | null>(null);
+  const [mouseKoordinat, setMouseKoordinat] = useState<LatLng | null>(null);
+  const [eiendomLoading, setEiendomLoading] = useState(false);
+  const [eiendomError, setEiendomError] = useState("");
+  const singleClickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // --- infiltrasjon state ---
   const [jordtyper, setJordtyper] = useState<
@@ -282,6 +483,90 @@ export default function HomePage() {
     fetchTerrain(pointA, b);
   }
 
+  function handleMapSingleClick(lat: number, lng: number) {
+    if (singleClickTimer.current) clearTimeout(singleClickTimer.current);
+    singleClickTimer.current = setTimeout(async () => {
+      setEiendomLoading(true);
+      setEiendomError("");
+      setEiendomGrense(null);
+      setEiendomAdresse(null);
+      setEiendomMatrikkel(null);
+      setEiendomKoordinat({ lat, lng });
+
+      try {
+        const res = await fetch(
+          `http://localhost:8000/v1/eiendom/punkt?lat=${lat}&lng=${lng}`
+        );
+
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || "Kunne ikke hente eiendomsdata");
+        }
+
+        const data = await res.json();
+        setEiendomAdresse(data.adresse ?? null);
+        setEiendomGrense(data.grense ?? null);
+
+        if (data.matrikkel) {
+          setEiendomMatrikkel({
+            gnr: data.matrikkel.gnr,
+            bnr: data.matrikkel.bnr,
+            kommunenummer: data.matrikkel.kommunenummer ?? "",
+          });
+        } else if (data.grense?.features?.length > 0) {
+          const props = data.grense.features[0]?.properties ?? {};
+          const fromKeys = (keys: string[]) => {
+            for (const key of keys) {
+              const value = props[key];
+              const parsed = Number(value);
+              if (Number.isFinite(parsed)) return parsed;
+            }
+            return null;
+          };
+          const gnr = fromKeys([
+            "gardsnummer",
+            "gårdsnummer",
+            "gnr",
+            "GARDSNUMMER",
+            "GNR",
+          ]);
+          const bnr = fromKeys([
+            "bruksnummer",
+            "bnr",
+            "BRUKSNUMMER",
+            "BNR",
+          ]);
+          const kommunenummer =
+            props.kommunenummer ??
+            props.kommunenr ??
+            props.knr ??
+            props.KOMMUNENUMMER ??
+            "";
+
+          if (gnr !== null && bnr !== null) {
+            setEiendomMatrikkel({
+              gnr,
+              bnr,
+              kommunenummer: String(kommunenummer),
+            });
+          }
+        }
+
+        if (Array.isArray(data.warnings) && data.warnings.length > 0) {
+          setEiendomError(data.warnings.join(" "));
+        }
+      } catch (_) {
+        setEiendomError("Kunne ikke hente eiendomsdata.");
+      } finally {
+        setEiendomLoading(false);
+      }
+    }, 300);
+  }
+
+  function cancelSingleClick() {
+    if (singleClickTimer.current) clearTimeout(singleClickTimer.current);
+  }
+
   return (
     <div className="min-h-dvh w-full bg-[#F6F8FF] dark:bg-slate-950">
       <header className="sticky top-0 z-[9999] w-full bg-[#213F53] dark:bg-slate-950">
@@ -306,7 +591,7 @@ export default function HomePage() {
             <input
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
-              className="h-10 w-full max-w-xl rounded-full bg-white px-5 text-sm text-slate-900 shadow-md outline-none placeholder:text-slate-400 focus:ring-4 focus:ring-white/20 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700 text-center"
+              className="h-10 w-full max-w-xl rounded-xl bg-white px-5 text-sm text-slate-900 shadow-md outline-none placeholder:text-slate-400 focus:ring-4 focus:ring-white/20 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700 text-center"
               placeholder="Prosjektnavn"
               aria-label="Prosjektnavn"
             />
@@ -522,9 +807,9 @@ export default function HomePage() {
 
       {/* Main content */}
       <main className="h-[calc(100dvh-4rem)] bg-[#F6F8FF] dark:bg-slate-950">
-        <div className="grid h-full grid-cols-1 lg:grid-cols-[320px_1fr]">
+        <div className="grid h-full grid-cols-1 overflow-hidden lg:grid-cols-[320px_1fr]">
           {/* Left panel */}
-          <aside className="order-2 border-t border-slate-200 bg-[#F6F8FF] p-4 lg:order-1 lg:border-r lg:border-t-0 dark:border-slate-800 dark:bg-slate-950">
+          <aside className="order-2 overflow-y-auto border-t border-slate-200 bg-[#F6F8FF] p-4 lg:order-1 lg:border-r lg:border-t-0 dark:border-slate-800 dark:bg-slate-950">
             <div className="space-y-5">
               <section>
                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
@@ -535,9 +820,9 @@ export default function HomePage() {
 
               <section>
                 <div className="grid grid-cols-3 gap-3">
-                  <input className="h-10 w-full rounded-full border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700" />
-                  <input className="h-10 w-full rounded-full border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700" />
-                  <input className="h-10 w-full rounded-full border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700" />
+                  <input className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700" />
+                  <input className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700" />
+                  <input className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700" />
                 </div>
                 <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                   (F.eks. gårdsnr, bruksnr, postnr – kobles dynamisk senere)
@@ -622,7 +907,7 @@ export default function HomePage() {
                       Høyde
                     </label>
                     <input
-                      className="h-10 w-full rounded-full border border-slate-200 bg-slate-100 px-3 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-slate-100 px-3 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                       value={
                         terrainLoading
                           ? "Henter..."
@@ -640,7 +925,7 @@ export default function HomePage() {
                       Lengde
                     </label>
                     <input
-                      className="h-10 w-full rounded-full border border-slate-200 bg-slate-100 px-3 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-slate-100 px-3 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                       value={
                         terrainLoading
                           ? "Henter..."
@@ -671,6 +956,51 @@ export default function HomePage() {
                     <span className="font-semibold">
                       {konsentrasjonstid.toFixed(2)} min
                     </span>
+                  </div>
+                )}
+
+                {eiendomLoading && (
+                  <div className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+                    Henter eiendomsdata...
+                  </div>
+                )}
+
+                {eiendomError && !eiendomLoading && (
+                  <div className="mt-2 text-xs text-amber-700 dark:text-amber-400">
+                    {eiendomError}
+                  </div>
+                )}
+
+                {(eiendomAdresse || eiendomMatrikkel) && !eiendomLoading && (
+                  <div className="mt-3 rounded-xl border border-slate-200 bg-white/60 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+                    <div className="mb-1 text-xs text-slate-500 dark:text-slate-400">
+                      Nærmeste adresse
+                    </div>
+                    <div className="text-sm font-medium text-slate-800 dark:text-slate-100">
+                      {eiendomAdresse ?? "Ingen adresse funnet for punktet"}
+                    </div>
+                    {eiendomMatrikkel && (
+                      <div className="mt-2 flex gap-3 text-xs text-slate-500 dark:text-slate-400">
+                        <span>
+                          Knr:{" "}
+                          <span className="font-semibold text-slate-700 dark:text-slate-200">
+                            {eiendomMatrikkel.kommunenummer}
+                          </span>
+                        </span>
+                        <span>
+                          Gnr:{" "}
+                          <span className="font-semibold text-slate-700 dark:text-slate-200">
+                            {eiendomMatrikkel.gnr}
+                          </span>
+                        </span>
+                        <span>
+                          Bnr:{" "}
+                          <span className="font-semibold text-slate-700 dark:text-slate-200">
+                            {eiendomMatrikkel.bnr}
+                          </span>
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
               </section>
@@ -912,6 +1242,7 @@ export default function HomePage() {
                   <MapContainer
                     center={[60.3913, 5.3221]}
                     zoom={13}
+                    maxZoom={20}
                     className="h-full w-full"
                     doubleClickZoom={false}
                   >
@@ -930,14 +1261,14 @@ export default function HomePage() {
                       />
                     )}
 
-                    <TileLayer
-                      attribution="&copy; OpenStreetMap contributors"
-                      url={
-                        darkMode
-                          ? "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
-                          : "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      }
-                    />
+                    <div className="pointer-events-none absolute bottom-3 left-3 z-[1001] rounded-md border border-[#d8c4b0] bg-white/95 px-3 py-1 text-[16px] font-medium leading-none tracking-wide text-black shadow">
+                      {(() => {
+                        const source = mouseKoordinat ?? eiendomKoordinat;
+                        if (!source) return "EU89 UTM33 -";
+                        const utm = latLngToUtm33(source.lat, source.lng);
+                        return `EU89 UTM33 ${utm.northing}N ${utm.easting}Ø`;
+                      })()}
+                    </div>
                   </MapContainer>
                 </div>
               )}
