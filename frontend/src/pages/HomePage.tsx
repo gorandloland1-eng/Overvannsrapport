@@ -586,7 +586,7 @@ export default function HomePage() {
             <input
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
-              className="h-10 w-full max-w-xl rounded-full bg-white px-5 text-sm text-slate-900 shadow-md outline-none placeholder:text-slate-400 focus:ring-4 focus:ring-white/20 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700 text-center"
+              className="h-10 w-full max-w-xl rounded-xl bg-white px-5 text-sm text-slate-900 shadow-md outline-none placeholder:text-slate-400 focus:ring-4 focus:ring-white/20 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700 text-center"
               placeholder="Prosjektnavn"
               aria-label="Prosjektnavn"
             />
@@ -816,9 +816,9 @@ export default function HomePage() {
 
               <section>
                 <div className="grid grid-cols-3 gap-3">
-                  <input className="h-10 w-full rounded-full border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700" />
-                  <input className="h-10 w-full rounded-full border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700" />
-                  <input className="h-10 w-full rounded-full border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700" />
+                  <input className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700" />
+                  <input className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700" />
+                  <input className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700" />
                 </div>
                 <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                   (F.eks. gårdsnr, bruksnr, postnr – kobles dynamisk senere)
@@ -903,7 +903,7 @@ export default function HomePage() {
                       Høyde
                     </label>
                     <input
-                      className="h-10 w-full rounded-full border border-slate-200 bg-slate-100 px-3 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-slate-100 px-3 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                       value={
                         terrainLoading
                           ? "Henter..."
@@ -921,7 +921,7 @@ export default function HomePage() {
                       Lengde
                     </label>
                     <input
-                      className="h-10 w-full rounded-full border border-slate-200 bg-slate-100 px-3 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-slate-100 px-3 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                       value={
                         terrainLoading
                           ? "Henter..."

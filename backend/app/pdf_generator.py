@@ -22,5 +22,8 @@ def generate_project_pdf(data) -> str:
     elements.append(Paragraph(f"Lengde: {data.length} m", styles["Normal"]))
     elements.append(Paragraph(f"Konsentrasjonstid: {data.time_of_concentration} min", styles["Normal"]))
 
+    elements.append(Spacer(1, 0.3 * inch))
+    elements.append(Paragraph(f"Dato: {dato}", styles["Normal"]))
+
     doc.build(elements)
     return filepath
