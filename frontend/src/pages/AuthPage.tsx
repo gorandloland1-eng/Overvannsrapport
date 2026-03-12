@@ -5,6 +5,7 @@ import {
   loginWithEmail,
   registerWithEmail,
   resetPassword,
+  getAuthErrorMessage,
 } from "../auth/authActions";
 import { updateProfile } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
@@ -72,7 +73,7 @@ export default function AuthPage() {
         });
       }
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Noe gikk galt");
+      setError(getAuthErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -93,11 +94,7 @@ export default function AuthPage() {
       await resetPassword(email.trim());
       setInfo("Tilbakestillingslenke er sendt til e-postadressen din.");
     } catch (e: unknown) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : "Kunne ikke sende tilbakestillingsmail"
-      );
+      setError(getAuthErrorMessage(e));
     } finally {
       setResetLoading(false);
     }
