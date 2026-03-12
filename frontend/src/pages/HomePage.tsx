@@ -1246,7 +1246,53 @@ export default function HomePage() {
                     className="h-full w-full"
                     doubleClickZoom={false}
                   >
-                    <MapClickHandler onPick={handleMapPick} />
+                    <MapClickHandler
+                      onPick={handleMapPick}
+                      onSingleClick={handleMapSingleClick}
+                      onCancelSingleClick={cancelSingleClick}
+                      onMouseMove={(lat, lng) => setMouseKoordinat({ lat, lng })}
+                    />
+
+                    <MapLayerToggle layer={mapLayer} onChange={setMapLayer} />
+                    <MapScale />
+
+                    <TileLayer
+                      attribution={
+                        mapLayer === "kart"
+                          ? "Kartverket (CC BY 4.0)"
+                          : mapLayer === "terreng"
+                          ? "OpenTopoMap (CC-BY-SA)"
+                          : "Esri, Maxar, Earthstar Geographics"
+                      }
+                      url={
+                        mapLayer === "kart"
+                          ? "https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png"
+                          : mapLayer === "terreng"
+                          ? "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
+                          : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                      }
+                      maxZoom={20}
+                      maxNativeZoom={
+                        mapLayer === "terreng"
+                          ? 17
+                          : mapLayer === "kart"
+                          ? 18
+                          : 19
+                      }
+                    />
+
+                    {eiendomGrense && (
+                      <GeoJSON
+                        key={JSON.stringify(eiendomGrense)}
+                        data={eiendomGrense}
+                        style={{
+                          color: "#f59e0b",
+                          weight: 2,
+                          fillOpacity: 0.1,
+                          fillColor: "#f59e0b",
+                        }}
+                      />
+                    )}
 
                     {pointA && (
                       <CircleMarker

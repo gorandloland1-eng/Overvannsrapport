@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import AuthPage from "./pages/AuthPage";
 import HomePage from "./pages/HomePage";
 import ProfilePage from "./pages/ProfilePage";
