@@ -12,9 +12,11 @@ import logo from "../assets/logo.png";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { signOut } from "firebase/auth";
-import { auth } from "../firebase"; // sørg for at auth eksporteres fra firebase-fila deres
+import { auth, db, storage } from "../firebase";
 import { useNavigate, Link } from "react-router-dom";
 import { Map, Table2 } from "lucide-react";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 type WeatherStation = {
   id: string;
@@ -32,7 +34,6 @@ type IvfResponse = {
   mm: Record<string, Record<string, number>>;
 };
 
-// --- typer og dblclick-handler ---
 type LatLng = { lat: number; lng: number };
 
 function MapClickHandler({
@@ -59,7 +60,6 @@ function MapClickHandler({
     },
   });
 
-  // ekstra sikkerhet (i tillegg til MapContainer-prop)
   useEffect(() => {
     map.doubleClickZoom.disable();
   }, [map]);
@@ -131,7 +131,12 @@ function MapLayerToggle({
 function MapScale() {
   const map = useMap();
   const ref = useRef<HTMLDivElement>(null);
-  const [info, setInfo] = useState({ ratio: 0, barWidth: 80, barLabel: "100 m" });
+  const [info, setInfo] = useState({
+    ratio: 0,
+    barWidth: 80,
+    barLabel: "100 m",
+  });
+
   useEffect(() => {
     function update() {
       const zoom = map.getZoom();
@@ -156,7 +161,9 @@ function MapScale() {
 
     map.on("zoomend moveend", update);
     update();
-    return () => { map.off("zoomend moveend", update); };
+    return () => {
+      map.off("zoomend moveend", update);
+    };
   }, [map]);
 
   useEffect(() => {
@@ -166,7 +173,7 @@ function MapScale() {
   return (
     <div
       ref={ref}
-      className="absolute bottom-3 left-1/2 z-1000 flex items-center gap-3 rounded-lg border border-white/40 bg-white/80 px-3 py-1.5 shadow backdrop-blur-sm select-none"
+      className="absolute bottom-3 left-1/2 z-1000 flex select-none items-center gap-3 rounded-lg border border-white/40 bg-white/80 px-3 py-1.5 shadow backdrop-blur-sm"
       style={{ transform: "translateX(-50%)" }}
     >
       <div className="flex flex-col items-center gap-0.5">
@@ -216,7 +223,8 @@ function latLngToUtm33(lat: number, lng: number) {
       n *
       (aTerm +
         ((1 - t + c) * Math.pow(aTerm, 3)) / 6 +
-        ((5 - 18 * t + t * t + 72 * c - 58 * ep2) * Math.pow(aTerm, 5)) / 120) +
+        ((5 - 18 * t + t * t + 72 * c - 58 * ep2) * Math.pow(aTerm, 5)) /
+          120) +
     500000;
 
   let northing =
@@ -243,7 +251,6 @@ export default function HomePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Dropdown
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -266,18 +273,55 @@ export default function HomePage() {
   const [klimafaktor, setKlimafaktor] = useState("1.0");
   const [maksPaslipp, setMaksPaslipp] = useState("0.0");
 
+  const [pointA, setPointA] = useState<LatLng | null>(null);
+  const [pointB, setPointB] = useState<LatLng | null>(null);
+
+  const [hoyde, setHoyde] = useState<number | null>(null);
+  const [lengde, setLengde] = useState<number | null>(null);
+  const [konsentrasjonstid, setKonsentrasjonstid] = useState<number | null>(
+    null
+  );
+
+  const [terrainLoading, setTerrainLoading] = useState(false);
+  const [terrainError, setTerrainError] = useState("");
+  const [mapLayer, setMapLayer] = useState<"kart" | "terreng" | "satellitt">(
+    "kart"
+  );
+  const [eiendomGrense, setEiendomGrense] = useState<object | null>(null);
+  const [eiendomAdresse, setEiendomAdresse] = useState<string | null>(null);
+  const [eiendomMatrikkel, setEiendomMatrikkel] = useState<{
+    gnr: number;
+    bnr: number;
+    kommunenummer: string;
+  } | null>(null);
+  const [eiendomKoordinat, setEiendomKoordinat] = useState<LatLng | null>(null);
+  const [mouseKoordinat, setMouseKoordinat] = useState<LatLng | null>(null);
+  const [eiendomLoading, setEiendomLoading] = useState(false);
+  const [eiendomError, setEiendomError] = useState("");
+  const singleClickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [jordtyper, setJordtyper] = useState<
+    { id: string; navn: string; k_m_s: number; beskrivelse: string }[]
+  >([]);
+  const [infiltrasjonMetode, setInfiltrasjonMetode] = useState<"altA" | "altB">(
+    "altB"
+  );
+  const [valgtJordtype, setValgtJordtype] = useState("");
+  const [arealBunn, setArealBunn] = useState("");
+  const [arealSide, setArealSide] = useState("");
+  const [qInfManuell, setQInfManuell] = useState("");
+
+  const [pdfSaving, setPdfSaving] = useState(false);
+  const [pdfError, setPdfError] = useState("");
+
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
   }, [darkMode]);
 
-  // Hent værstasjoner fra backend til dropdown
   useEffect(() => {
     async function fetchStations() {
       try {
-        // prøv først router med prefix /ivf
         let res = await fetch("http://localhost:8000/ivf/stations");
-
-        // fallback hvis routeren er mountet uten prefix
         if (!res.ok) {
           res = await fetch("http://localhost:8000/stations");
         }
@@ -308,7 +352,6 @@ export default function HomePage() {
     (station) => station.id === selectedWeatherStation
   );
 
-  // Hent IVF-data for valgt værstasjon
   useEffect(() => {
     async function fetchIvf() {
       if (!selectedWeatherStation) return;
@@ -341,7 +384,6 @@ export default function HomePage() {
     fetchIvf();
   }, [selectedWeatherStation]);
 
-  // Klikk utenfor for å lukke menyer
   useEffect(() => {
     function onDown(e: MouseEvent) {
       const target = e.target as Node;
@@ -365,52 +407,6 @@ export default function HomePage() {
     return () => window.removeEventListener("mousedown", onDown);
   }, [menuOpen, stationDropdownOpen]);
 
-  async function handleLogout() {
-    setMenuOpen(false);
-    await signOut(auth);
-  }
-
-  // --- state for to punkt + resultat ---
-  const [pointA, setPointA] = useState<LatLng | null>(null);
-  const [pointB, setPointB] = useState<LatLng | null>(null);
-
-  const [hoyde, setHoyde] = useState<number | null>(null);
-  const [lengde, setLengde] = useState<number | null>(null);
-  const [konsentrasjonstid, setKonsentrasjonstid] = useState<number | null>(
-    null
-  );
-
-  const [terrainLoading, setTerrainLoading] = useState(false);
-  const [terrainError, setTerrainError] = useState("");
-  const [mapLayer, setMapLayer] = useState<"kart" | "terreng" | "satellitt">(
-    "kart"
-  );
-  const [eiendomGrense, setEiendomGrense] = useState<object | null>(null);
-  const [eiendomAdresse, setEiendomAdresse] = useState<string | null>(null);
-  const [eiendomMatrikkel, setEiendomMatrikkel] = useState<{
-    gnr: number;
-    bnr: number;
-    kommunenummer: string;
-  } | null>(null);
-  const [eiendomKoordinat, setEiendomKoordinat] = useState<LatLng | null>(null);
-  const [mouseKoordinat, setMouseKoordinat] = useState<LatLng | null>(null);
-  const [eiendomLoading, setEiendomLoading] = useState(false);
-  const [eiendomError, setEiendomError] = useState("");
-  const singleClickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // --- infiltrasjon state ---
-  const [jordtyper, setJordtyper] = useState<
-    { id: string; navn: string; k_m_s: number; beskrivelse: string }[]
-  >([]);
-  const [infiltrasjonMetode, setInfiltrasjonMetode] = useState<"altA" | "altB">(
-    "altB"
-  );
-  const [valgtJordtype, setValgtJordtype] = useState("");
-  const [arealBunn, setArealBunn] = useState("");
-  const [arealSide, setArealSide] = useState("");
-  const [qInfManuell, setQInfManuell] = useState("");
-
-  // --- hent jordtyper fra backend ---
   useEffect(() => {
     fetch("http://localhost:8000/calculation/jordtyper")
       .then((r) => r.json())
@@ -418,7 +414,94 @@ export default function HomePage() {
       .catch(() => {});
   }, []);
 
-  // --- API-kall til FastAPI ---
+  async function handleLogout() {
+    setMenuOpen(false);
+    await signOut(auth);
+  }
+
+  async function savePdfToFilesPage(pdfBlob: Blob) {
+    if (!user) throw new Error("Bruker ikke innlogget");
+
+    const safeProjectName = projectName.trim() || "Prosjektnavn";
+    const fileName = `${safeProjectName}-${Date.now()}.pdf`;
+
+    const fileRef = ref(storage, `pdfReports/${user.uid}/${fileName}`);
+    await uploadBytes(fileRef, pdfBlob);
+
+    const pdfUrl = await getDownloadURL(fileRef);
+
+    await addDoc(collection(db, "pdfReports"), {
+      userId: user.uid,
+      projectName: safeProjectName,
+      description: "PDF-rapport generert fra overvannsprosjekt",
+      pdfUrl,
+      createdAt: serverTimestamp(),
+    });
+  }
+
+  async function handleGeneratePdf() {
+    setPdfSaving(true);
+    setPdfError("");
+
+    try {
+      const qInfCalculated =
+        infiltrasjonMetode === "altB"
+          ? Number(qInfManuell || 0)
+          : (() => {
+              const jt = jordtyper.find((j) => j.id === valgtJordtype);
+              if (!jt) return 0;
+              return (
+                jt.k_m_s *
+                (Number(arealBunn || 0) * 0.5 + Number(arealSide || 0) * 1.0) *
+                1000
+              );
+            })();
+
+      const payload = {
+        projectName,
+        selectedWeatherStation,
+        selectedWeatherStationName: selectedStation?.name ?? "",
+        areal: Number(areal || 0),
+        returperiode: Number(returperiode || 0),
+        klimafaktor: Number(klimafaktor || 0),
+        maksPaslipp: Number(maksPaslipp || 0),
+        hoyde,
+        lengde,
+        konsentrasjonstid,
+        infiltrasjonMetode,
+        valgtJordtype,
+        arealBunn: Number(arealBunn || 0),
+        arealSide: Number(arealSide || 0),
+        qInf: qInfCalculated,
+        eiendomAdresse,
+        eiendomMatrikkel,
+      };
+
+      const res = await fetch("http://localhost:8000/generate-pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || "Kunne ikke generere PDF");
+      }
+
+      const pdfBlob = await res.blob();
+      await savePdfToFilesPage(pdfBlob);
+      navigate("/filer");
+    } catch (e: unknown) {
+      setPdfError(
+        e instanceof Error ? e.message : "Noe gikk galt ved generering av PDF"
+      );
+    } finally {
+      setPdfSaving(false);
+    }
+  }
+
   async function fetchTerrain(a: LatLng, b: LatLng) {
     setTerrainLoading(true);
     setTerrainError("");
@@ -463,9 +546,7 @@ export default function HomePage() {
     }
   }
 
-  // --- 2-dobbelklikk logikk ---
   function handleMapPick(lat: number, lng: number) {
-    // 1. punkt eller ny runde (hvis begge var satt)
     if (!pointA || (pointA && pointB)) {
       setPointA({ lat, lng });
       setPointB(null);
@@ -477,7 +558,6 @@ export default function HomePage() {
       return;
     }
 
-    // 2. punkt
     const b = { lat, lng };
     setPointB(b);
     fetchTerrain(pointA, b);
@@ -571,33 +651,27 @@ export default function HomePage() {
     <div className="min-h-dvh w-full bg-[#F6F8FF] dark:bg-slate-950">
       <header className="sticky top-0 z-[9999] w-full bg-[#213F53] dark:bg-slate-950">
         <div className="flex h-16 w-full items-center justify-between px-5">
-          {/* Left */}
           <Link to="/" className="flex items-center gap-3">
-            <Link to="/" className="flex items-center">
-              <img
-                src={logo}
-                alt="Trygt Overvann logo"
-                className="h-10 w-auto object-contain cursor-pointer"
-              />
-            </Link>
-
+            <img
+              src={logo}
+              alt="Trygt Overvann logo"
+              className="h-10 w-auto cursor-pointer object-contain"
+            />
             <div className="text-lg font-semibold text-white">
               Trygt Overvann AS
             </div>
           </Link>
 
-          {/* Center (Prosjektnavn) */}
           <div className="flex flex-1 justify-center px-4">
             <input
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
-              className="h-10 w-full max-w-xl rounded-xl bg-white px-5 text-sm text-slate-900 shadow-md outline-none placeholder:text-slate-400 focus:ring-4 focus:ring-white/20 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700 text-center"
+              className="h-10 w-full max-w-xl rounded-xl bg-white px-5 text-center text-sm text-slate-900 shadow-md outline-none placeholder:text-slate-400 focus:ring-4 focus:ring-white/20 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
               placeholder="Prosjektnavn"
               aria-label="Prosjektnavn"
             />
           </div>
 
-          {/* Right (Profile + dropdown) */}
           <div className="relative">
             <button
               ref={buttonRef}
@@ -639,8 +713,7 @@ export default function HomePage() {
                 ref={menuRef}
                 className="absolute right-0 mt-3 z-[9999] w-72 rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900"
               >
-                {/* Header */}
-                <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
                   <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-300 bg-white text-sm font-semibold text-black dark:border-slate-600 dark:bg-slate-700 dark:text-white">
                     {user?.photoURL ? (
                       <img
@@ -659,7 +732,6 @@ export default function HomePage() {
                     )}
                   </div>
 
-                  {/* Navn */}
                   <div className="flex flex-col">
                     <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
                       {user?.displayName || "Bruker"}
@@ -667,22 +739,16 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Items */}
                 <button
                   onClick={() => {
                     setMenuOpen(false);
                     navigate("/profil");
                   }}
-                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800"
+                  className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
                     <span className="inline-flex h-5 w-5 items-center justify-center">
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="18"
-                        height="18"
-                        fill="none"
-                      >
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
                         <path
                           d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z"
                           stroke="currentColor"
@@ -704,18 +770,13 @@ export default function HomePage() {
                 <button
                   onClick={() => {
                     setMenuOpen(false);
-                    // senere: navigate("/filer")
+                    navigate("/filer");
                   }}
-                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800"
+                  className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
                     <span className="inline-flex h-5 w-5 items-center justify-center">
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="18"
-                        height="18"
-                        fill="none"
-                      >
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
                         <path
                           d="M4 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z"
                           stroke="currentColor"
@@ -729,16 +790,10 @@ export default function HomePage() {
                   <span className="text-slate-400">›</span>
                 </button>
 
-                {/* Dark mode row */}
-                <div className="px-4 py-3 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 dark:border-slate-800">
                   <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
                     <span className="inline-flex h-5 w-5 items-center justify-center">
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="18"
-                        height="18"
-                        fill="none"
-                      >
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
                         <path
                           d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.5 6.5 0 0 0 9.8 9.8Z"
                           stroke="currentColor"
@@ -768,36 +823,38 @@ export default function HomePage() {
 
                 <button
                   onClick={handleLogout}
-                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800"
+                  className="w-full border-t border-slate-100 px-4 py-3 text-left hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
                 >
-                  <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
-                    <span className="inline-flex h-5 w-5 items-center justify-center">
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
-                        <path
-                          d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M16 17l5-5-5-5"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M21 12H9"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </span>
-                    <span className="text-sm font-medium">Logg ut</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
+                      <span className="inline-flex h-5 w-5 items-center justify-center">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+                          <path
+                            d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M16 17l5-5-5-5"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M21 12H9"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </span>
+                      <span className="text-sm font-medium">Logg ut</span>
+                    </div>
+                    <span className="text-slate-400">›</span>
                   </div>
-                  <span className="text-slate-400">›</span>
                 </button>
               </div>
             )}
@@ -805,10 +862,8 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Main content */}
       <main className="h-[calc(100dvh-4rem)] bg-[#F6F8FF] dark:bg-slate-950">
         <div className="grid h-full grid-cols-1 overflow-hidden lg:grid-cols-[320px_1fr]">
-          {/* Left panel */}
           <aside className="order-2 overflow-y-auto border-t border-slate-200 bg-[#F6F8FF] p-4 lg:order-1 lg:border-r lg:border-t-0 dark:border-slate-800 dark:bg-slate-950">
             <div className="space-y-5">
               <section>
@@ -829,7 +884,6 @@ export default function HomePage() {
                 </div>
               </section>
 
-              {/* Værstasjon */}
               <section>
                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
                   Værstasjon
@@ -899,7 +953,6 @@ export default function HomePage() {
                 </div>
               </section>
 
-              {/* Høyde og Lengde (read-only, koblet til API) */}
               <section>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -951,7 +1004,7 @@ export default function HomePage() {
                 </div>
 
                 {konsentrasjonstid !== null && !terrainLoading && (
-                  <div className="mt-3 rounded-xl bg-white/60 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 p-3 text-sm font-medium text-slate-800 dark:text-slate-100">
+                  <div className="mt-3 rounded-xl border border-slate-200 bg-white/60 p-3 text-sm font-medium text-slate-800 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100">
                     Konsentrasjonstid:{" "}
                     <span className="font-semibold">
                       {konsentrasjonstid.toFixed(2)} min
@@ -1005,13 +1058,11 @@ export default function HomePage() {
                 )}
               </section>
 
-              {/* Infiltrasjon */}
               <section>
                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
                   Infiltrasjonskapasitet
                 </label>
 
-                {/* Toggle Alt B / Alt A */}
                 <div className="mb-3 flex overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
                   <button
                     type="button"
@@ -1102,7 +1153,6 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    {/* Live Q_inf preview */}
                     {valgtJordtype && arealBunn && arealSide && (() => {
                       const jt = jordtyper.find((j) => j.id === valgtJordtype);
                       if (!jt) return null;
@@ -1124,7 +1174,6 @@ export default function HomePage() {
                 )}
               </section>
 
-              {/* Nye inputfelt */}
               <section>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -1189,22 +1238,28 @@ export default function HomePage() {
                   </div>
                 </div>
 
+                {pdfError && (
+                  <div className="mt-3 text-xs text-red-600 dark:text-red-400">
+                    {pdfError}
+                  </div>
+                )}
+
                 <div className="pt-4">
                   <button
                     type="button"
-                    className="h-14 w-full rounded-[16px] bg-slate-300 text-base font-semibold text-black transition hover:bg-slate-400 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600"
+                    onClick={handleGeneratePdf}
+                    disabled={pdfSaving}
+                    className="h-14 w-full rounded-[16px] bg-slate-300 text-base font-semibold text-black transition hover:bg-slate-400 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600"
                   >
-                    Generer PDF
+                    {pdfSaving ? "Genererer PDF..." : "Generer PDF"}
                   </button>
                 </div>
               </section>
             </div>
           </aside>
 
-          {/* Right panel */}
-          <section className="order-1 h-full lg:order-2 flex flex-col">
-            <div className="flex-1 relative">
-              {/* Flytende picker på kartet / tabellen */}
+          <section className="order-1 flex h-full flex-col lg:order-2">
+            <div className="relative flex-1">
               <div className="absolute left-16 top-3 z-[1000]">
                 <div className="flex overflow-hidden rounded-xl border border-slate-200 bg-white/95 shadow-lg backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
                   <button
@@ -1295,16 +1350,10 @@ export default function HomePage() {
                     )}
 
                     {pointA && (
-                      <CircleMarker
-                        center={[pointA.lat, pointA.lng]}
-                        radius={7}
-                      />
+                      <CircleMarker center={[pointA.lat, pointA.lng]} radius={7} />
                     )}
                     {pointB && (
-                      <CircleMarker
-                        center={[pointB.lat, pointB.lng]}
-                        radius={7}
-                      />
+                      <CircleMarker center={[pointB.lat, pointB.lng]} radius={7} />
                     )}
 
                     <div className="pointer-events-none absolute bottom-3 left-3 z-[1001] rounded-md border border-[#d8c4b0] bg-white/95 px-3 py-1 text-[16px] font-medium leading-none tracking-wide text-black shadow">
@@ -1393,14 +1442,16 @@ export default function HomePage() {
                                   key={`${period}-${duration}`}
                                   className="border-r border-b border-slate-300 px-2 py-2 text-center text-slate-700 last:border-r-0 dark:border-slate-700 dark:text-slate-200"
                                 >
-                                  {ivfData.ls_ha[String(duration)]?.[String(period)] ?? "-"}
+                                  {ivfData.ls_ha[String(duration)]?.[
+                                    String(period)
+                                  ] ?? "-"}
                                 </td>
                               ))}
                             </tr>
                           ))}
                         </tbody>
                       </table>
-                    </div>  
+                    </div>
                   )}
 
                   {!ivfLoading && !ivfError && !ivfData && (
