@@ -530,8 +530,8 @@ export default function HomePage() {
         typeof data.hoydeforskjell_m === "number" ? data.hoydeforskjell_m : null
       );
       setKonsentrasjonstid(
-        typeof data.konsentrasjonstid_min === "number"
-          ? data.konsentrasjonstid_min
+        typeof data.konsentrasjonstid_ivf_min === "number"
+          ? data.konsentrasjonstid_ivf_min
           : null
       );
     } catch (e: unknown) {

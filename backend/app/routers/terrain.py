@@ -3,6 +3,7 @@ from app.schemas.schemas import TwoPointRequest
 from app.services.elevation import get_elevation
 from app.utils.haversine_distance import haversine_distance
 from app.services.calculations.konsentrasjonstid_kirpich import konsentrasjonstid_kirpich
+from app.services.calculations.konsentrasjonstid_kirpich import round_down_ivf_duration
 
 router = APIRouter()
 
@@ -20,6 +21,8 @@ def calculate_terrain(data: TwoPointRequest):
     )
 
     tc = konsentrasjonstid_kirpich(lengde, hoydeforskjell)
+    tc_ivf = round_down_ivf_duration(tc)
+
 
     print(f"{'='*30}")
     print("Terrengdata:")
@@ -39,6 +42,7 @@ def calculate_terrain(data: TwoPointRequest):
         "lengde_m": lengde,
         "hoydeforskjell_m": hoydeforskjell,
         "konsentrasjonstid_min": tc,
+        "konsentrasjonstid_ivf_min": tc_ivf,
         "elev1": elev1,
         "elev2": elev2
     }

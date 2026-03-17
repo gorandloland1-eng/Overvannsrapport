@@ -1,4 +1,5 @@
 import math
+from app.services.calculations.constants import STANDARD_VARIGHETER
 
 def konsentrasjonstid_kirpich(
     lengde_m: float,
@@ -16,3 +17,9 @@ def konsentrasjonstid_kirpich(
     tc = 0.0663 * (lengde_m ** 0.77) / (stigning ** 0.385)
 
     return max(tc, 10.0)
+
+def round_down_ivf_duration(tc: float) -> int:
+    for varighet in reversed(STANDARD_VARIGHETER):
+        if tc >= varighet:
+            return varighet
+    return STANDARD_VARIGHETER[0]
