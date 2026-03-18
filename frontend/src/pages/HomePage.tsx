@@ -487,8 +487,19 @@ export default function HomePage() {
         throw new Error(txt || "Kunne ikke generere PDF");
       }
 
-      const pdfBlob = await res.blob();
-      await savePdfToFilesPage(pdfBlob);
+      const responseData = await res.json();
+      console.log("Backend response:", responseData);
+      const firebaseUrl = responseData.firebase_url;
+      console.log("Firebase URL:", firebaseUrl);
+
+      await addDoc(collection(db, "pdfReports"), {
+        userId: user.uid,
+        projectName: projectName.trim() || "Ukjent prosjekt",
+        description: "PDF-rapport generert fra overvannsprosjekt",
+        pdfUrl: firebaseUrl,
+        createdAt: serverTimestamp(),
+      });
+
       navigate("/filer");
     } catch (e: unknown) {
       setPdfError(
