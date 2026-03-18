@@ -394,7 +394,7 @@ export default function FilesPage() {
                       onClick={() => openPdf(file.pdfUrl)}
                       className="rounded-xl bg-[#213F53] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
                     >
-                      Se fil
+                      Se innhold
                     </button>
 
                     <button
