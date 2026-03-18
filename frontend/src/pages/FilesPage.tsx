@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 import logo from "../assets/logo.png";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { signOut } from "firebase/auth";
 import { auth, db } from "../firebase";
@@ -27,7 +27,7 @@ export default function FilesPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [projectName] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
 
@@ -78,6 +78,16 @@ export default function FilesPage() {
     return () => unsubscribe();
   }, [user]);
 
+  const filteredFiles = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+
+    if (!term) return files;
+
+    return files.filter((file) =>
+      (file.projectName || "").toLowerCase().includes(term)
+    );
+  }, [files, searchTerm]);
+
   async function handleLogout() {
     setMenuOpen(false);
     await signOut(auth);
@@ -118,11 +128,11 @@ export default function FilesPage() {
 
           <div className="flex flex-1 justify-center px-4">
             <input
-              value={projectName}
-              readOnly
-              className="h-10 w-full max-w-xl rounded-xl bg-white px-5 text-center text-sm text-slate-900 shadow-md outline-none dark:bg-slate-900 dark:text-slate-100"
-              placeholder=""
-              aria-label="Prosjektnavn"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="h-10 w-full max-w-xl rounded-xl bg-white px-5 text-center text-sm text-slate-900 shadow-md outline-none placeholder:text-slate-400 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400"
+              placeholder="Søk etter filnavn"
+              aria-label="Søk etter filnavn"
             />
           </div>
 
@@ -327,13 +337,15 @@ export default function FilesPage() {
             <div className="text-sm text-slate-500 dark:text-slate-400">
               Laster filer...
             </div>
-          ) : files.length === 0 ? (
+          ) : filteredFiles.length === 0 ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
-              Ingen filer lagret ennå.
+              {searchTerm.trim()
+                ? "Ingen filer matcher søket."
+                : "Ingen filer lagret ennå."}
             </div>
           ) : (
             <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-              {files.map((file) => (
+              {filteredFiles.map((file) => (
                 <div
                   key={file.id}
                   className="rounded-2xl bg-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.14)] dark:bg-slate-900"
