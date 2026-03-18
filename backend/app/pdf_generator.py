@@ -4,24 +4,58 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
 
-def generate_project_pdf(data) -> str:
-    os.makedirs(data.project_name, exist_ok=True)
+def generate_project_pdf(data, kibler_resultat=None) -> str:
+    safe_name = data.project_name.strip() or "Ukjent_prosjekt"
+    output_path = os.path.join("output", safe_name)
+    os.makedirs(output_path, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filepath = os.path.join(data.project_name, f"terreng_{timestamp}.pdf")
+    filepath = os.path.join(output_path, f"rapport_{timestamp}.pdf")
 
     doc = SimpleDocTemplate(filepath)
     styles = getSampleStyleSheet()
     elements = []
 
-    elements.append(Paragraph(f"Overvannsrapport - {data.project_name}", styles["Heading1"]))
+    # --- Tittel --- #
+    elements.append(Paragraph(f"Overvannsrapport – {data.project_name}", styles["Heading1"]))
+    elements.append(Paragraph(f"Dato: {datetime.now().strftime('%d.%m.%Y')}", styles["Normal"]))
     elements.append(Spacer(1, 0.3 * inch))
+
+    # --- Eiendomsdata --- #
+    elements.append(Paragraph("Eiendomsdata", styles["Heading2"]))
+    elements.append(Paragraph(f"Adresse: {data.eiendom_adresse or 'Ikke angitt'}", styles["Normal"]))
+    if data.eiendom_gnr and data.eiendom_bnr:
+        elements.append(Paragraph(f"Gårdsnummer / Bruksnummer: {data.eiendom_gnr} / {data.eiendom_bnr}", styles["Normal"]))
+    elements.append(Spacer(1, 0.3 * inch))
+
+    # --- Værstasjon --- #
+    elements.append(Paragraph("Værstasjon", styles["Heading2"]))
+    elements.append(Paragraph(f"Valgt værstasjon: {data.selected_weather_station_name or data.selected_weather_station}", styles["Normal"]))
+    elements.append(Spacer(1, 0.3 * inch))
+
+    # --- Inndata / Parametere --- #
+    elements.append(Paragraph("Inndata og parametere", styles["Heading2"]))
+    elements.append(Paragraph(f"Areal: {data.areal} m²", styles["Normal"]))
+    elements.append(Paragraph(f"Returperiode: {data.returperiode} år", styles["Normal"]))
+    elements.append(Paragraph(f"Klimafaktor: {data.klimafaktor}", styles["Normal"]))
+    elements.append(Paragraph(f"Maks påslipp: {data.maks_paslipp} l/s", styles["Normal"]))
+    elements.append(Paragraph(f"Infiltrasjonskapasitet (Q_inf): {data.infiltrasjonskapasitet} l/s", styles["Normal"]))
+    elements.append(Spacer(1, 0.3 * inch))
+
+    # --- Terrengdata --- #
     elements.append(Paragraph("Terrengdata", styles["Heading2"]))
     elements.append(Paragraph(f"Høydeforskjell: {data.height} m", styles["Normal"]))
-    elements.append(Paragraph(f"Lengde: {data.length} m", styles["Normal"]))
+    elements.append(Paragraph(f"Lengde: {round(data.length, 1)} m", styles["Normal"]))
     elements.append(Paragraph(f"Konsentrasjonstid: {data.time_of_concentration} min", styles["Normal"]))
-
     elements.append(Spacer(1, 0.3 * inch))
-    elements.append(Paragraph(f"Dato: {timestamp}", styles["Normal"]))
+
+    # --- Aron Kibler --- #
+    if kibler_resultat:
+        elements.append(Paragraph("Aron Kibler-beregning", styles["Heading2"]))
+        elements.append(Paragraph(f"Dimensjonerende varighet: {kibler_resultat['dim_varighet_min']} min", styles["Normal"]))
+        elements.append(Paragraph(f"Dimensjonerende intensitet: {kibler_resultat['dim_intensitet_l_s_ha']} l/s/ha", styles["Normal"]))
+        elements.append(Paragraph(f"Innløpsflow (Q_inn): {kibler_resultat['dim_Q_inn_l_s']:.2f} l/s", styles["Normal"]))
+        elements.append(Paragraph(f"Nødvendig utjevningsvolum: {kibler_resultat['dim_utjevningsvolum_m3']:.2f} m³", styles["Normal"]))
+        elements.append(Paragraph(f"Fordrøyningsprosent: {kibler_resultat['fordroeyningsprosent']*100:.1f} %", styles["Normal"]))
 
     doc.build(elements)
     return filepath

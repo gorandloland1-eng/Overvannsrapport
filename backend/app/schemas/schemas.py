@@ -79,3 +79,6 @@ class PDFRequest(BaseModel):
     eiendom_adresse: Optional[str] = None
     eiendom_gnr: Optional[int] = None
     eiendom_bnr: Optional[int] = None
+    phi: float = 0.9 
+    selected_weather_station: str = ""
+    selected_weather_station_name: str = ""
