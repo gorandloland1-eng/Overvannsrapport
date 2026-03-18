@@ -18,7 +18,6 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
 
-  const [projectName] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
 
@@ -195,15 +194,7 @@ export default function ProfilePage() {
             </div>
           </Link>
 
-          <div className="flex flex-1 justify-center px-4">
-            <input
-              value={projectName}
-              readOnly
-              className="h-10 w-full max-w-xl rounded-full bg-white px-5 text-center text-sm text-slate-900 shadow-md outline-none dark:bg-slate-900 dark:text-slate-100"
-              placeholder=""
-              aria-label="Prosjektnavn"
-            />
-          </div>
+          <div className="flex-1" />
 
           <div className="relative">
             <button
@@ -411,28 +402,28 @@ export default function ProfilePage() {
                 >
                   <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
                     <span className="inline-flex h-5 w-5 items-center justify-center">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
-  <path
-    d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  />
-  <path
-    d="M16 17l5-5-5-5"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  />
-  <path
-    d="M21 12H9"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-  />
-</svg>
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+                        <path
+                          d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M16 17l5-5-5-5"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M21 12H9"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                      </svg>
                     </span>
                     <span className="text-sm font-medium">Logg ut</span>
                   </div>
@@ -499,28 +490,28 @@ export default function ProfilePage() {
               onClick={handleLogout}
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-900 transition hover:bg-red-100 hover:text-red-600 dark:text-slate-300 dark:hover:bg-red-900/30 dark:hover:text-red-400"
             >
-             <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
-  <path
-    d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  />
-  <path
-    d="M16 17l5-5-5-5"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  />
-  <path
-    d="M21 12H9"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-  />
-</svg>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+                <path
+                  d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M16 17l5-5-5-5"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M21 12H9"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
               Logg ut
             </button>
           </aside>
