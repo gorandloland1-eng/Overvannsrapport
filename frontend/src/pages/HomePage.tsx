@@ -32,6 +32,9 @@ type IvfResponse = {
   return_periods: number[];
   ls_ha: Record<string, Record<string, number>>;
   mm: Record<string, Record<string, number>>;
+  first_year?: number | null;
+  last_year?: number | null;
+  source_type?: string;
 };
 
 type LatLng = { lat: number; lng: number };
@@ -1387,6 +1390,12 @@ export default function HomePage() {
                         selectedStation?.name ||
                         "Ingen værstasjon valgt"}
                     </div>
+
+                    {ivfData?.first_year && ivfData?.last_year && (
+                      <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        Data fra {ivfData.first_year} til {ivfData.last_year}
+                      </div>
+                    )}
                   </div>
 
                   {ivfLoading && (
