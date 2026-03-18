@@ -673,15 +673,7 @@ export default function HomePage() {
             </div>
           </Link>
 
-          <div className="flex flex-1 justify-center px-4">
-            <input
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              className="h-10 w-full max-w-xl rounded-xl bg-white px-5 text-center text-sm text-slate-900 shadow-md outline-none placeholder:text-slate-400 focus:ring-4 focus:ring-white/20 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
-              placeholder="Prosjektnavn"
-              aria-label="Prosjektnavn"
-            />
-          </div>
+          <div className="flex-1" />
 
           <div className="relative">
             <button
@@ -877,6 +869,18 @@ export default function HomePage() {
         <div className="grid h-full grid-cols-1 overflow-hidden lg:grid-cols-[320px_1fr]">
           <aside className="order-2 overflow-y-auto border-t border-slate-200 bg-[#F6F8FF] p-4 lg:order-1 lg:border-r lg:border-t-0 dark:border-slate-800 dark:bg-slate-950">
             <div className="space-y-5">
+              <section>
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
+                  Prosjektnavn
+                </label>
+                <input
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
+                  aria-label="Prosjektnavn"
+                />
+              </section>
+
               <section>
                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
                   Eiendoms-ID
