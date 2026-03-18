@@ -458,26 +458,23 @@ export default function HomePage() {
             })();
 
       const payload = {
-        projectName,
-        selectedWeatherStation,
-        selectedWeatherStationName: selectedStation?.name ?? "",
+        project_name: projectName,
+        height: hoyde ?? 0,
+        length: lengde ?? 0,
+        time_of_concentration: konsentrasjonstid ?? 0,
         areal: Number(areal || 0),
         returperiode: Number(returperiode || 0),
         klimafaktor: Number(klimafaktor || 0),
-        maksPaslipp: Number(maksPaslipp || 0),
-        hoyde,
-        lengde,
-        konsentrasjonstid,
-        infiltrasjonMetode,
-        valgtJordtype,
-        arealBunn: Number(arealBunn || 0),
-        arealSide: Number(arealSide || 0),
-        qInf: qInfCalculated,
-        eiendomAdresse,
-        eiendomMatrikkel,
+        maks_paslipp: Number(maksPaslipp || 0),
+        infiltrasjonskapasitet: qInfCalculated,
+        eiendom_adresse: eiendomAdresse,
+        eiendom_gnr: eiendomMatrikkel?.gnr ?? null,
+        eiendom_bnr: eiendomMatrikkel?.bnr ?? null,
+        selected_weather_station: selectedWeatherStation,
+        selected_weather_station_name: selectedStation?.name ?? "",
       };
 
-      const res = await fetch("http://localhost:8000/generate-pdf", {
+      const res = await fetch("http://localhost:8000/pdf/generate-pdf", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

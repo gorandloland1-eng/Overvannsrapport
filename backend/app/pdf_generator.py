@@ -16,8 +16,6 @@ def generate_project_pdf(data) -> str:
     elements.append(Paragraph(f"Overvannsrapport - {data.project_name}", styles["Heading1"]))
     elements.append(Spacer(1, 0.3 * inch))
     elements.append(Paragraph("Terrengdata", styles["Heading2"]))
-    elements.append(Paragraph(f"Høyde punkt A: {data.elev1} m", styles["Normal"]))
-    elements.append(Paragraph(f"Høyde punkt B: {data.elev2} m", styles["Normal"]))
     elements.append(Paragraph(f"Høydeforskjell: {data.height} m", styles["Normal"]))
     elements.append(Paragraph(f"Lengde: {data.length} m", styles["Normal"]))
     elements.append(Paragraph(f"Konsentrasjonstid: {data.time_of_concentration} min", styles["Normal"]))

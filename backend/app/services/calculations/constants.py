@@ -16,4 +16,4 @@ HYDRAULISK_KONDUKTIVITET = {
     "Leire / moreneleire": {"k_m_s": 1e-10,  "beskrivelse": "Neglisjerbar"},
 }
 
-STANDARD_VARIGHETER = [10, 15, 20, 30, 45, 60, 90, 120, 180, 360, 720, 1440]
+STANDARD_VARIGHETER = [3 , 5, 10, 15, 20, 30, 45, 60, 90, 120, 180, 360, 720, 1440]

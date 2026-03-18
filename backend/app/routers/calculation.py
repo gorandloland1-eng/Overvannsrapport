@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.schemas.schemas import AronKiblerRequest
-from app.aron_kibler import aron_kibler_beregning
+from app.services.calculations.aron_kibler import aron_kibler_beregning
 from app.services.calculations.ivf import OSLO_BLINDERN_IVF
 from app.services.calculations.constants import HYDRAULISK_KONDUKTIVITET
 from app.services.calculations.models import InfiltrasjonData

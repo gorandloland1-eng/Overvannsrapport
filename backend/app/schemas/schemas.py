@@ -65,10 +65,17 @@ class TwoPointRequest(BaseModel):
 
 class PDFRequest(BaseModel):
     project_name: str
+    elev1: Optional[float] = None
+    elev2: Optional[float] = None
     height: float
     length: float
     time_of_concentration: float
-
-    # --- Kirpich calculations --- #
-    elev1: float
-    elev2: float
+    areal: float
+    returperiode: int
+    klimafaktor: float
+    maks_paslipp: float
+    infiltrasjonskapasitet: float = 0.0
+    # Eiendom
+    eiendom_adresse: Optional[str] = None
+    eiendom_gnr: Optional[int] = None
+    eiendom_bnr: Optional[int] = None
