@@ -434,12 +434,12 @@ export default function HomePage() {
     const pdfUrl = await getDownloadURL(fileRef);
 
     await addDoc(collection(db, "pdfReports"), {
-      userId: user.uid,
-      projectName: safeProjectName,
-      description: "PDF-rapport generert fra overvannsprosjekt",
-      pdfUrl,
-      createdAt: serverTimestamp(),
-    });
+  userId: user.uid,
+  projectName: projectName.trim() || "Ukjent prosjekt",
+  description: "PDF-rapport generert fra overvannsprosjekt",
+  pdfUrl: firebaseUrl,
+  createdAt: serverTimestamp(),
+});
   }
 
   async function handleGeneratePdf() {
@@ -495,13 +495,27 @@ export default function HomePage() {
       const firebaseUrl = responseData.firebase_url;
       console.log("Firebase URL:", firebaseUrl);
 
-      await addDoc(collection(db, "pdfReports"), {
-        userId: user.uid,
-        projectName: projectName.trim() || "Ukjent prosjekt",
-        description: "PDF-rapport generert fra overvannsprosjekt",
-        pdfUrl: firebaseUrl,
-        createdAt: serverTimestamp(),
-      });
+     await addDoc(collection(db, "pdfReports"), {
+  userId: user.uid,
+  projectName: projectName.trim() || "Ukjent prosjekt",
+  description: "PDF-rapport generert fra overvannsprosjekt",
+  pdfUrl: firebaseUrl,
+  createdAt: serverTimestamp(),
+  data: {
+    areal,
+    returperiode,
+    klimafaktor,
+    maksPaslipp,
+    hoyde,
+    lengde,
+    konsentrasjonstid,
+    selectedWeatherStationName: selectedStation?.name ?? "",
+    infiltrasjon: qInfCalculated,
+    adresse: eiendomAdresse,
+    gnr: eiendomMatrikkel?.gnr ?? null,
+    bnr: eiendomMatrikkel?.bnr ?? null,
+  },
+});
 
       navigate("/filer");
     } catch (e: unknown) {

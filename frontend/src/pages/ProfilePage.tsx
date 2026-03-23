@@ -325,40 +325,32 @@ export default function ProfilePage() {
                 </button>
 
                 <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setActiveTab("security");
-                  }}
-                  className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800"
-                >
-                  <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
-                    <span className="inline-flex h-5 w-5 items-center justify-center">
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="18"
-                        height="18"
-                        fill="none"
-                      >
-                        <path
-                          d="M6 10V7a6 6 0 1 1 12 0v3"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        />
-                        <rect
-                          x="4"
-                          y="10"
-                          width="16"
-                          height="10"
-                          rx="2"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        />
-                      </svg>
-                    </span>
-                    <span className="text-sm font-medium">Sikkerhet</span>
-                  </div>
-                  <span className="text-slate-400">›</span>
-                </button>
+  onClick={() => {
+    setMenuOpen(false);
+    navigate("/filer");
+  }}
+  className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800"
+>
+  <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
+    <span className="inline-flex h-5 w-5 items-center justify-center">
+      <svg
+        viewBox="0 0 24 24"
+        width="18"
+        height="18"
+        fill="none"
+      >
+        <path
+          d="M4 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
+    <span className="text-sm font-medium">Filer</span>
+  </div>
+  <span className="text-slate-400">›</span>
+</button>
 
                 <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 dark:border-slate-800">
                   <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">

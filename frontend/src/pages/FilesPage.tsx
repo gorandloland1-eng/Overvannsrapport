@@ -4,7 +4,8 @@ import logo from "../assets/logo.png";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { signOut } from "firebase/auth";
-import { auth, db } from "../firebase";
+import { auth, db, storage } from "../firebase";
+import { ref, getBlob } from "firebase/storage";
 import {
   collection,
   onSnapshot,
@@ -21,6 +22,20 @@ type SavedFile = {
   description?: string;
   pdfUrl: string;
   createdAt?: any;
+  data?: {
+    areal?: string | number;
+    returperiode?: string | number;
+    klimafaktor?: string | number;
+    maksPaslipp?: string | number;
+    hoyde?: number | null;
+    lengde?: number | null;
+    konsentrasjonstid?: number | null;
+    selectedWeatherStationName?: string;
+    infiltrasjon?: string | number;
+    adresse?: string | null;
+    gnr?: string | number | null;
+    bnr?: string | number | null;
+  };
 };
 
 export default function FilesPage() {
@@ -33,6 +48,7 @@ export default function FilesPage() {
 
   const [files, setFiles] = useState<SavedFile[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(true);
+  const [expandedFileId, setExpandedFileId] = useState<string | null>(null);
 
   const menuRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -80,7 +96,6 @@ export default function FilesPage() {
 
   const filteredFiles = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
-
     if (!term) return files;
 
     return files.filter((file) =>
@@ -98,17 +113,17 @@ export default function FilesPage() {
     return createdAt.toDate().toLocaleDateString("no-NO");
   }
 
-  function openPdf(url: string) {
-    window.open(url, "_blank", "noopener,noreferrer");
-  }
+ function downloadPdf(url: string, projectName: string) {
+  const encodedUrl = encodeURIComponent(url);
+  const encodedFilename = encodeURIComponent(
+    `${projectName || "rapport"}.pdf`
+  );
 
-  function downloadPdf(url: string, projectName: string) {
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${projectName || "rapport"}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  window.location.href = `http://localhost:8000/pdf/download-from-url?url=${encodedUrl}&filename=${encodedFilename}`;
+}
+
+  function toggleExpanded(fileId: string) {
+    setExpandedFileId((prev) => (prev === fileId ? null : fileId));
   }
 
   return (
@@ -345,67 +360,173 @@ export default function FilesPage() {
             </div>
           ) : (
             <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-              {filteredFiles.map((file) => (
-                <div
-                  key={file.id}
-                  className="rounded-2xl bg-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.14)] dark:bg-slate-900"
-                >
-                  <div className="mb-4 flex items-start justify-between">
-                    <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                      {file.projectName || "Prosjektnavn"}
+              {filteredFiles.map((file) => {
+                const isExpanded = expandedFileId === file.id;
+
+                return (
+                  <div
+                    key={file.id}
+                    className="rounded-2xl bg-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.14)] dark:bg-slate-900"
+                  >
+                    <div className="mb-4 flex items-start justify-between">
+                      <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                        {file.projectName || "Prosjektnavn"}
+                      </div>
+
+                      <button
+                        onClick={() => toggleExpanded(file.id)}
+                        className="text-lg font-semibold text-slate-700 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                        title={isExpanded ? "Skjul innhold" : "Se innhold"}
+                      >
+                        {isExpanded ? "−" : "+"}
+                      </button>
                     </div>
 
-                    <button
-                      onClick={() => openPdf(file.pdfUrl)}
-                      className="text-slate-700 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
-                      title="Se fil"
-                    >
-                      ▶
-                    </button>
-                  </div>
+                    <div className="mb-6 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
+                        <rect
+                          x="4"
+                          y="5"
+                          width="16"
+                          height="15"
+                          rx="2"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        />
+                        <path
+                          d="M8 3v4M16 3v4M4 10h16"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <span>{formatDate(file.createdAt)}</span>
+                    </div>
 
-                  <div className="mb-6 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
-                      <rect
-                        x="4"
-                        y="5"
-                        width="16"
-                        height="15"
-                        rx="2"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      />
-                      <path
-                        d="M8 3v4M16 3v4M4 10h16"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    <span>{formatDate(file.createdAt)}</span>
-                  </div>
+                    <div className="mb-6 text-sm text-slate-700 dark:text-slate-300">
+                      {file.description || "PDF-rapport lagret fra prosjektet."}
+                    </div>
 
-                  <div className="mb-6 text-sm text-slate-700 dark:text-slate-300">
-                    {file.description || "PDF-rapport lagret fra prosjektet."}
-                  </div>
+                    {isExpanded && (
+                      <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950">
+                        {file.data ? (
+                          <div className="space-y-4 text-sm text-slate-700 dark:text-slate-300">
+                            <div>
+                              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                Eiendom
+                              </div>
+                              <div>
+                                <span className="font-medium text-slate-900 dark:text-slate-100">
+                                  Adresse:
+                                </span>{" "}
+                                {file.data.adresse || "-"}
+                              </div>
+                              <div>
+                                <span className="font-medium text-slate-900 dark:text-slate-100">
+                                  Gnr/Bnr:
+                                </span>{" "}
+                                {file.data.gnr ?? "-"} / {file.data.bnr ?? "-"}
+                              </div>
+                            </div>
 
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => openPdf(file.pdfUrl)}
-                      className="rounded-xl bg-[#213F53] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
-                    >
-                      Se innhold
-                    </button>
+                            <div className="border-t border-slate-200 pt-4 dark:border-slate-700">
+                              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                Terrengdata
+                              </div>
+                              <div>
+                                <span className="font-medium text-slate-900 dark:text-slate-100">
+                                  Høyde:
+                                </span>{" "}
+                                {file.data.hoyde ?? "-"} m
+                              </div>
+                              <div>
+                                <span className="font-medium text-slate-900 dark:text-slate-100">
+                                  Lengde:
+                                </span>{" "}
+                                {file.data.lengde ?? "-"} m
+                              </div>
+                              <div>
+                                <span className="font-medium text-slate-900 dark:text-slate-100">
+                                  Konsentrasjonstid:
+                                </span>{" "}
+                                {file.data.konsentrasjonstid ?? "-"} min
+                              </div>
+                            </div>
 
-                    <button
-                      onClick={() => downloadPdf(file.pdfUrl, file.projectName)}
-                      className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                    >
-                      Last ned
-                    </button>
+                            <div className="border-t border-slate-200 pt-4 dark:border-slate-700">
+                              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                Dimensjonering
+                              </div>
+                              <div>
+                                <span className="font-medium text-slate-900 dark:text-slate-100">
+                                  Areal:
+                                </span>{" "}
+                                {file.data.areal ?? "-"} m²
+                              </div>
+                              <div>
+                                <span className="font-medium text-slate-900 dark:text-slate-100">
+                                  Returperiode:
+                                </span>{" "}
+                                {file.data.returperiode ?? "-"} år
+                              </div>
+                              <div>
+                                <span className="font-medium text-slate-900 dark:text-slate-100">
+                                  Klimafaktor:
+                                </span>{" "}
+                                {file.data.klimafaktor ?? "-"}
+                              </div>
+                              <div>
+                                <span className="font-medium text-slate-900 dark:text-slate-100">
+                                  Maks påslipp:
+                                </span>{" "}
+                                {file.data.maksPaslipp ?? "-"} l/s
+                              </div>
+                            </div>
+
+                            <div className="border-t border-slate-200 pt-4 dark:border-slate-700">
+                              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                Infiltrasjon og værstasjon
+                              </div>
+                              <div>
+                                <span className="font-medium text-slate-900 dark:text-slate-100">
+                                  Infiltrasjonskapasitet:
+                                </span>{" "}
+                                {file.data.infiltrasjon ?? "-"} l/s
+                              </div>
+                              <div>
+                                <span className="font-medium text-slate-900 dark:text-slate-100">
+                                  Værstasjon:
+                                </span>{" "}
+                                {file.data.selectedWeatherStationName || "-"}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-sm text-slate-500 dark:text-slate-400">
+                            Det finnes ikke lagrede rapportdata for denne filen ennå.
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => toggleExpanded(file.id)}
+                        className="rounded-xl bg-[#213F53] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+                      >
+                        {isExpanded ? "Skjul innhold" : "Se innhold"}
+                      </button>
+
+                      <button
+                        onClick={() => downloadPdf(file.pdfUrl, file.projectName)}
+                        className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                      >
+                        Last ned PDF
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
