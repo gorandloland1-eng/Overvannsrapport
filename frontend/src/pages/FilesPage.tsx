@@ -5,9 +5,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { signOut } from "firebase/auth";
 import { auth, db, storage } from "../firebase";
-import { ref, getBlob } from "firebase/storage";
+import { ref, deleteObject } from "firebase/storage";
 import {
   collection,
+  deleteDoc,
+  doc,
   onSnapshot,
   orderBy,
   query,
@@ -82,9 +84,9 @@ export default function FilesPage() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
+      const data = snapshot.docs.map((docItem) => ({
+        id: docItem.id,
+        ...docItem.data(),
       })) as SavedFile[];
 
       setFiles(data);
@@ -113,17 +115,41 @@ export default function FilesPage() {
     return createdAt.toDate().toLocaleDateString("no-NO");
   }
 
- function downloadPdf(url: string, projectName: string) {
-  const encodedUrl = encodeURIComponent(url);
-  const encodedFilename = encodeURIComponent(
-    `${projectName || "rapport"}.pdf`
-  );
+  function downloadPdf(url: string, projectName: string) {
+    const encodedUrl = encodeURIComponent(url);
+    const encodedFilename = encodeURIComponent(
+      `${projectName || "rapport"}.pdf`
+    );
 
-  window.location.href = `http://localhost:8000/pdf/download-from-url?url=${encodedUrl}&filename=${encodedFilename}`;
-}
+    window.location.href = `http://localhost:8000/pdf/download-from-url?url=${encodedUrl}&filename=${encodedFilename}`;
+  }
 
   function toggleExpanded(fileId: string) {
     setExpandedFileId((prev) => (prev === fileId ? null : fileId));
+  }
+
+  async function handleDeleteFile(file: SavedFile) {
+    const confirmed = window.confirm(
+      `Er du sikker på at du vil slette "${file.projectName || "denne filen"}"?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      if (file.pdfUrl) {
+        const pdfRef = ref(storage, file.pdfUrl);
+        await deleteObject(pdfRef);
+      }
+
+      await deleteDoc(doc(db, "pdfReports", file.id));
+
+      if (expandedFileId === file.id) {
+        setExpandedFileId(null);
+      }
+    } catch (error) {
+      console.error("Kunne ikke slette fil:", error);
+      alert("Kunne ikke slette filen.");
+    }
   }
 
   return (
@@ -374,11 +400,37 @@ export default function FilesPage() {
                       </div>
 
                       <button
-                        onClick={() => toggleExpanded(file.id)}
-                        className="text-lg font-semibold text-slate-700 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
-                        title={isExpanded ? "Skjul innhold" : "Se innhold"}
+                        onClick={() => handleDeleteFile(file)}
+                        className="text-slate-500 transition hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
+                        title="Slett fil"
                       >
-                        {isExpanded ? "−" : "+"}
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+                          <path
+                            d="M3 6h18"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                          <path
+                            d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M19 6l-1 13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M10 11v6M14 11v6"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                        </svg>
                       </button>
                     </div>
 
