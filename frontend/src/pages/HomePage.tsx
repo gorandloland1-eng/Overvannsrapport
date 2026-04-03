@@ -527,6 +527,37 @@ export default function HomePage() {
     }
   }
 
+  function handleReset() {
+  setProjectName("");
+
+  setAreal("200");
+  setReturperiode("5");
+  setKlimafaktor("1.0");
+  setMaksPaslipp("0.0");
+
+  setPointA(null);
+  setPointB(null);
+
+  setHoyde(null);
+  setLengde(null);
+  setKonsentrasjonstid(null);
+
+  setEiendomGrense(null);
+  setEiendomAdresse(null);
+  setEiendomMatrikkel(null);
+  setEiendomKoordinat(null);
+  setEiendomError("");
+
+  setValgtJordtype("");
+  setArealBunn("");
+  setArealSide("");
+  setQInfManuell("");
+
+  setInfiltrasjonMetode("altB");
+
+  setPdfError("");
+}
+
   async function fetchTerrain(a: LatLng, b: LatLng) {
     setTerrainLoading(true);
     setTerrainError("");
@@ -1273,16 +1304,24 @@ export default function HomePage() {
                   </div>
                 )}
 
-                <div className="pt-4">
-                  <button
-                    type="button"
-                    onClick={handleGeneratePdf}
-                    disabled={pdfSaving}
-                    className="h-14 w-full rounded-[16px] bg-slate-300 text-base font-semibold text-black transition hover:bg-slate-400 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600"
-                  >
-                    {pdfSaving ? "Genererer PDF..." : "Generer PDF"}
-                  </button>
-                </div>
+               <div className="pt-4 space-y-3">
+  <button
+    type="button"
+    onClick={handleGeneratePdf}
+    disabled={pdfSaving}
+    className="h-14 w-full rounded-[16px] bg-slate-300 text-base font-semibold text-black transition hover:bg-slate-400 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600"
+  >
+    {pdfSaving ? "Genererer PDF..." : "Generer PDF"}
+  </button>
+
+  <button
+    type="button"
+    onClick={handleReset}
+    className="h-12 w-full rounded-[16px] border border-slate-300 bg-white text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+  >
+    Nullstill
+  </button>
+</div>
               </section>
             </div>
           </aside>

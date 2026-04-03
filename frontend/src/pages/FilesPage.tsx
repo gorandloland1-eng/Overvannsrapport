@@ -386,203 +386,251 @@ export default function FilesPage() {
             </div>
           ) : (
             <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-              {filteredFiles.map((file) => {
-                const isExpanded = expandedFileId === file.id;
-
-                return (
-                  <div
-                    key={file.id}
-                    className="rounded-2xl bg-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.14)] dark:bg-slate-900"
-                  >
-                    <div className="mb-4 flex items-start justify-between">
-                      <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                        {file.projectName || "Prosjektnavn"}
-                      </div>
-
-                      <button
-                        onClick={() => handleDeleteFile(file)}
-                        className="text-slate-500 transition hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
-                        title="Slett fil"
-                      >
-                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
-                          <path
-                            d="M3 6h18"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                          />
-                          <path
-                            d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <path
-                            d="M19 6l-1 13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinejoin="round"
-                          />
-                          <path
-                            d="M10 11v6M14 11v6"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                      </button>
+              {filteredFiles.map((file) => (
+                <div
+                  key={file.id}
+                  className="rounded-2xl bg-white p-6 shadow-[0_12px_30px_rgba(15,23,42,0.14)] dark:bg-slate-900"
+                >
+                  <div className="mb-4 flex items-start justify-between gap-4">
+                    <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                      {file.projectName || "Prosjektnavn"}
                     </div>
 
-                    <div className="mb-6 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
-                        <rect
-                          x="4"
-                          y="5"
-                          width="16"
-                          height="15"
-                          rx="2"
+                    <button
+                      onClick={() => handleDeleteFile(file)}
+                      className="shrink-0 text-slate-500 transition hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
+                      title="Slett fil"
+                    >
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+                        <path
+                          d="M3 6h18"
                           stroke="currentColor"
                           strokeWidth="2"
+                          strokeLinecap="round"
                         />
                         <path
-                          d="M8 3v4M16 3v4M4 10h16"
+                          d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M19 6l-1 13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M10 11v6M14 11v6"
                           stroke="currentColor"
                           strokeWidth="2"
                           strokeLinecap="round"
                         />
                       </svg>
-                      <span>{formatDate(file.createdAt)}</span>
-                    </div>
-
-                    <div className="mb-6 text-sm text-slate-700 dark:text-slate-300">
-                      {file.description || "PDF-rapport lagret fra prosjektet."}
-                    </div>
-
-                    {isExpanded && (
-                      <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950">
-                        {file.data ? (
-                          <div className="space-y-4 text-sm text-slate-700 dark:text-slate-300">
-                            <div>
-                              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                                Eiendom
-                              </div>
-                              <div>
-                                <span className="font-medium text-slate-900 dark:text-slate-100">
-                                  Adresse:
-                                </span>{" "}
-                                {file.data.adresse || "-"}
-                              </div>
-                              <div>
-                                <span className="font-medium text-slate-900 dark:text-slate-100">
-                                  Gnr/Bnr:
-                                </span>{" "}
-                                {file.data.gnr ?? "-"} / {file.data.bnr ?? "-"}
-                              </div>
-                            </div>
-
-                            <div className="border-t border-slate-200 pt-4 dark:border-slate-700">
-                              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                                Terrengdata
-                              </div>
-                              <div>
-                                <span className="font-medium text-slate-900 dark:text-slate-100">
-                                  Høyde:
-                                </span>{" "}
-                                {file.data.hoyde ?? "-"} m
-                              </div>
-                              <div>
-                                <span className="font-medium text-slate-900 dark:text-slate-100">
-                                  Lengde:
-                                </span>{" "}
-                                {file.data.lengde ?? "-"} m
-                              </div>
-                              <div>
-                                <span className="font-medium text-slate-900 dark:text-slate-100">
-                                  Konsentrasjonstid:
-                                </span>{" "}
-                                {file.data.konsentrasjonstid ?? "-"} min
-                              </div>
-                            </div>
-
-                            <div className="border-t border-slate-200 pt-4 dark:border-slate-700">
-                              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                                Dimensjonering
-                              </div>
-                              <div>
-                                <span className="font-medium text-slate-900 dark:text-slate-100">
-                                  Areal:
-                                </span>{" "}
-                                {file.data.areal ?? "-"} m²
-                              </div>
-                              <div>
-                                <span className="font-medium text-slate-900 dark:text-slate-100">
-                                  Returperiode:
-                                </span>{" "}
-                                {file.data.returperiode ?? "-"} år
-                              </div>
-                              <div>
-                                <span className="font-medium text-slate-900 dark:text-slate-100">
-                                  Klimafaktor:
-                                </span>{" "}
-                                {file.data.klimafaktor ?? "-"}
-                              </div>
-                              <div>
-                                <span className="font-medium text-slate-900 dark:text-slate-100">
-                                  Maks påslipp:
-                                </span>{" "}
-                                {file.data.maksPaslipp ?? "-"} l/s
-                              </div>
-                            </div>
-
-                            <div className="border-t border-slate-200 pt-4 dark:border-slate-700">
-                              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                                Infiltrasjon og værstasjon
-                              </div>
-                              <div>
-                                <span className="font-medium text-slate-900 dark:text-slate-100">
-                                  Infiltrasjonskapasitet:
-                                </span>{" "}
-                                {file.data.infiltrasjon ?? "-"} l/s
-                              </div>
-                              <div>
-                                <span className="font-medium text-slate-900 dark:text-slate-100">
-                                  Værstasjon:
-                                </span>{" "}
-                                {file.data.selectedWeatherStationName || "-"}
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-sm text-slate-500 dark:text-slate-400">
-                            Det finnes ikke lagrede rapportdata for denne filen ennå.
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => toggleExpanded(file.id)}
-                        className="rounded-xl bg-[#213F53] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
-                      >
-                        {isExpanded ? "Skjul innhold" : "Se innhold"}
-                      </button>
-
-                      <button
-                        onClick={() => downloadPdf(file.pdfUrl, file.projectName)}
-                        className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                      >
-                        Last ned PDF
-                      </button>
-                    </div>
+                    </button>
                   </div>
-                );
-              })}
+
+                  <div className="mb-6 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
+                      <rect
+                        x="4"
+                        y="5"
+                        width="16"
+                        height="15"
+                        rx="2"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      />
+                      <path
+                        d="M8 3v4M16 3v4M4 10h16"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <span>{formatDate(file.createdAt)}</span>
+                  </div>
+
+                  <div className="mb-6 text-sm text-slate-700 dark:text-slate-300">
+                    {file.description || "PDF-rapport lagret fra prosjektet."}
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => toggleExpanded(file.id)}
+                      className="rounded-xl bg-[#213F53] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+                    >
+                      Se innhold
+                    </button>
+
+                    <button
+                      onClick={() => downloadPdf(file.pdfUrl, file.projectName)}
+                      className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      Last ned PDF
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
       </main>
+
+      {expandedFileId && (
+        <div
+          className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm"
+          onClick={() => setExpandedFileId(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl animate-[fadeIn_0.2s_ease] dark:bg-slate-900"
+          >
+            {(() => {
+              const file = files.find((f) => f.id === expandedFileId);
+              if (!file) return null;
+
+              return (
+                <>
+                  <div className="mb-6 flex items-start justify-between gap-4">
+                    <div>
+                      <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                        {file.projectName || "Prosjektnavn"}
+                      </h2>
+                      <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                        {formatDate(file.createdAt)}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setExpandedFileId(null)}
+                      className="text-xl font-semibold text-slate-500 transition hover:text-red-500 dark:text-slate-400 dark:hover:text-red-400"
+                      title="Lukk"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {file.data ? (
+                    <div className="space-y-6 text-sm text-slate-700 dark:text-slate-300">
+                      <div>
+                        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          Eiendom
+                        </div>
+                        <div>
+                          <span className="font-medium text-slate-900 dark:text-slate-100">
+                            Adresse:
+                          </span>{" "}
+                          {file.data.adresse || "-"}
+                        </div>
+                        <div>
+                          <span className="font-medium text-slate-900 dark:text-slate-100">
+                            Gnr/Bnr:
+                          </span>{" "}
+                          {file.data.gnr ?? "-"} / {file.data.bnr ?? "-"}
+                        </div>
+                      </div>
+
+                      <div className="border-t border-slate-200 pt-4 dark:border-slate-700">
+                        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          Terrengdata
+                        </div>
+                        <div>
+                          <span className="font-medium text-slate-900 dark:text-slate-100">
+                            Høyde:
+                          </span>{" "}
+                          {file.data.hoyde ?? "-"} m
+                        </div>
+                        <div>
+                          <span className="font-medium text-slate-900 dark:text-slate-100">
+                            Lengde:
+                          </span>{" "}
+                          {file.data.lengde ?? "-"} m
+                        </div>
+                        <div>
+                          <span className="font-medium text-slate-900 dark:text-slate-100">
+                            Konsentrasjonstid:
+                          </span>{" "}
+                          {file.data.konsentrasjonstid ?? "-"} min
+                        </div>
+                      </div>
+
+                      <div className="border-t border-slate-200 pt-4 dark:border-slate-700">
+                        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          Dimensjonering
+                        </div>
+                        <div>
+                          <span className="font-medium text-slate-900 dark:text-slate-100">
+                            Areal:
+                          </span>{" "}
+                          {file.data.areal ?? "-"} m²
+                        </div>
+                        <div>
+                          <span className="font-medium text-slate-900 dark:text-slate-100">
+                            Returperiode:
+                          </span>{" "}
+                          {file.data.returperiode ?? "-"} år
+                        </div>
+                        <div>
+                          <span className="font-medium text-slate-900 dark:text-slate-100">
+                            Klimafaktor:
+                          </span>{" "}
+                          {file.data.klimafaktor ?? "-"}
+                        </div>
+                        <div>
+                          <span className="font-medium text-slate-900 dark:text-slate-100">
+                            Maks påslipp:
+                          </span>{" "}
+                          {file.data.maksPaslipp ?? "-"} l/s
+                        </div>
+                      </div>
+
+                      <div className="border-t border-slate-200 pt-4 dark:border-slate-700">
+                        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          Infiltrasjon og værstasjon
+                        </div>
+                        <div>
+                          <span className="font-medium text-slate-900 dark:text-slate-100">
+                            Infiltrasjonskapasitet:
+                          </span>{" "}
+                          {file.data.infiltrasjon ?? "-"} l/s
+                        </div>
+                        <div>
+                          <span className="font-medium text-slate-900 dark:text-slate-100">
+                            Værstasjon:
+                          </span>{" "}
+                          {file.data.selectedWeatherStationName || "-"}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-slate-500 dark:text-slate-400">
+                      Det finnes ikke lagrede rapportdata for denne filen ennå.
+                    </div>
+                  )}
+
+                  <div className="mt-8 flex gap-3">
+                    <button
+                      onClick={() => downloadPdf(file.pdfUrl, file.projectName)}
+                      className="rounded-xl bg-[#213F53] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+                    >
+                      Last ned PDF
+                    </button>
+
+                    <button
+                      onClick={() => handleDeleteFile(file)}
+                      className="rounded-xl border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 dark:border-red-800 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/30"
+                    >
+                      Slett fil
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
