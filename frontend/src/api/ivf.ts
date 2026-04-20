@@ -1,0 +1,32 @@
+const BASE = "http://localhost:8000";
+
+export type WeatherStation = {
+  id: string;
+  name: string;
+  municipality?: string;
+  county?: string;
+};
+
+export type IvfResponse = {
+  station_id: string;
+  station_name: string;
+  durations: number[];
+  return_periods: number[];
+  ls_ha: Record<string, Record<string, number>>;
+  mm: Record<string, Record<string, number>>;
+  first_year?: number | null;
+  last_year?: number | null;
+  source_type?: string;
+};
+
+export async function fetchWeatherStations(): Promise<WeatherStation[]> {
+  const res = await fetch(`${BASE}/ivf/stations`);
+  if (!res.ok) throw new Error("Could not fetch weather stations");
+  return res.json();
+}
+
+export async function fetchIvfData(stationId: string): Promise<IvfResponse> {
+  const res = await fetch(`${BASE}/ivf/ivf/${stationId}`);
+  if (!res.ok) throw new Error((await res.text()) || "Could not fetch IVF data");
+  return res.json();
+}
