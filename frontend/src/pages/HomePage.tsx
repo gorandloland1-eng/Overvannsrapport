@@ -432,7 +432,7 @@ export default function HomePage() {
                   />
                   <MapLayerToggle layer={mapLayer} onChange={setMapLayer} />
                   <MapScale />
-                  <TileLayer ... />
+                  <TileLayer />
                   {propertyBoundary && (
                     <GeoJSON
                       key={JSON.stringify(propertyBoundary)}
