@@ -37,12 +37,12 @@ export default function StationSection({
   );
 
   return (
-    <section>
+    <section className="relative z-30">
       <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
         Weather station
       </label>
 
-      <div className="relative z-10">
+      <div className="relative z-30">
         <input
           value={search}
           onChange={(e) => {
@@ -78,7 +78,7 @@ export default function StationSection({
         </button>
 
         {dropdownOpen && (
-          <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-30 max-h-44 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
+          <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-[9999] max-h-44 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
             {filteredStations.length > 0 ? (
               filteredStations.map((station) => (
                 <button
