@@ -4,7 +4,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { Map, Table2 } from "lucide-react";
 
 // --- API --- //
-import { fetchPropertyByMatrikkel } from "../api/property";
+import { fetchPropertyByPoint, fetchPropertyByMatrikkel } from "../api/property";
 import { fetchTerrain } from "../api/terrain";
 import { fetchWeatherStations, fetchIvfData } from "../api/ivf";
 import type { IvfResponse, WeatherStation } from "../api/ivf";
@@ -21,7 +21,13 @@ import { usePropertyState } from "../hooks/usePropertyState";
 import { useTerrainState } from "../hooks/useTerrainState";
 import { useGeneratePdf } from "../hooks/useGeneratePdf";
 
-export default function HomePage() {
+export default function HomePage({
+  darkMode,
+  setDarkMode,
+}: {
+  darkMode: boolean;
+  setDarkMode: (v: boolean) => void;
+}) {
   const { user } = useAuth();
 
   // --- Hooks ---
@@ -32,7 +38,7 @@ export default function HomePage() {
     propertyBoundary, setPropertyBoundary,
     propertyAddress, setPropertyAddress,
     propertyMatrikkel, setPropertyMatrikkel,
-    clickedCoord,
+    clickedCoord, setClickedCoord,
     mouseCoord, setMouseCoord,
     propertyLoading, setPropertyLoading,
     propertyError, setPropertyError,
@@ -55,7 +61,6 @@ export default function HomePage() {
   } = useTerrainState();
 
   // --- UI state ---
-  const [darkMode, setDarkMode] = useState(false);
   const [rightPanelView, setRightPanelView] = useState<"map" | "ivf">("map");
   const [mapLayer, setMapLayer] = useState<"kart" | "terreng" | "satellitt">("kart");
 
@@ -73,11 +78,9 @@ export default function HomePage() {
 
   // --- Refs ---
   const mapRef = useRef(null);
+  const singleClickTimer = useRef(null);
 
   // --- Effects ---
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-  }, [darkMode]);
 
   useEffect(() => {
     fetchWeatherStations()
@@ -121,11 +124,9 @@ export default function HomePage() {
       setTerrainError("");
       return;
     }
-
     setPointB({ lat, lng });
     setTerrainLoading(true);
     setTerrainError("");
-
     fetchTerrain(pointA.lat, pointA.lng, lat, lng)
       .then((data) => {
         setLength(data.lengde_m);
@@ -141,51 +142,71 @@ export default function HomePage() {
       .finally(() => setTerrainLoading(false));
   }
 
+  function handleMapSingleClick(lat: number, lng: number) {
+    if (singleClickTimer.current) clearTimeout(singleClickTimer.current);
+    singleClickTimer.current = setTimeout(async () => {
+      setPropertyLoading(true);
+      setPropertyError("");
+      setPropertyBoundary(null);
+      setPropertyAddress(null);
+      setPropertyMatrikkel(null);
+      setClickedCoord({ lat, lng });
+      try {
+        const data = await fetchPropertyByPoint(lat, lng);
+        setPropertyAddress(data.adresse ?? null);
+        setPropertyBoundary(data.grense ?? null);
+        if (data.matrikkel) {
+          setPropertyMatrikkel(data.matrikkel);
+          setMunicipalityNumber(data.matrikkel.kommunenummer);
+          setCadastralNumber(String(data.matrikkel.gnr));
+          setPropertyNumber(String(data.matrikkel.bnr));
+        }
+        if (data.warnings?.length > 0) setPropertyError(data.warnings.join(" "));
+      } catch {
+        setPropertyError("Could not fetch property data.");
+      } finally {
+        setPropertyLoading(false);
+      }
+    }, 300);
+  }
+
   async function handleMatrikkelLookup() {
     if (!municipalityNumber || !cadastralNumber || !propertyNumber) return;
-
     setMatrikkelLoading(true);
     setPropertyError("");
     setPropertyBoundary(null);
     setPropertyAddress(null);
     setPropertyMatrikkel(null);
-
     try {
       const data = await fetchPropertyByMatrikkel(
         municipalityNumber,
         Number(cadastralNumber),
         Number(propertyNumber)
       );
-
       setPropertyAddress(data.adresse ?? null);
       setPropertyBoundary(data.polygon ?? null);
-
       setPropertyMatrikkel({
         gnr: data.gardsnummer,
         bnr: data.bruksnummer,
         kommunenummer: data.kommunenummer,
       });
-
       if (data.bounds && mapRef.current) {
         mapRef.current.fitBounds(
           [[data.bounds.south, data.bounds.west], [data.bounds.north, data.bounds.east]],
           { padding: [40, 40] }
         );
       }
-
-      if (data.warnings?.length > 0) {
-        setPropertyError(data.warnings.join(" "));
-      }
+      if (data.warnings?.length > 0) setPropertyError(data.warnings.join(" "));
     } catch (e) {
-      setPropertyError(
-        e instanceof Error ? e.message : "Could not look up property."
-      );
+      setPropertyError(e instanceof Error ? e.message : "Could not look up property.");
     } finally {
       setMatrikkelLoading(false);
     }
   }
 
-  function cancelSingleClick() {}
+  function cancelSingleClick() {
+    if (singleClickTimer.current) clearTimeout(singleClickTimer.current);
+  }
 
   function handleReset() {
     resetForm();
@@ -261,6 +282,7 @@ export default function HomePage() {
 
           <section className="order-1 flex h-full flex-col lg:order-2">
             <div className="relative flex-1">
+
               <div className="absolute left-16 top-3 z-[1000]">
                 <div className="flex overflow-hidden rounded-xl border border-slate-200 bg-white/95 shadow-lg backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
                   <button
@@ -292,7 +314,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {rightPanelView === "map" && (
+              <div className={rightPanelView === "map" ? "h-full w-full" : "hidden"}>
                 <PropertyMap
                   mapRef={mapRef}
                   mapLayer={mapLayer}
@@ -303,20 +325,21 @@ export default function HomePage() {
                   mouseCoord={mouseCoord}
                   clickedCoord={clickedCoord}
                   onPick={handleMapPick}
-                  onSingleClick={() => {}}
+                  onSingleClick={handleMapSingleClick}
                   onCancelSingleClick={cancelSingleClick}
                   onMouseMove={(lat, lng) => setMouseCoord({ lat, lng })}
                 />
-              )}
+              </div>
 
-              {rightPanelView === "ivf" && (
+              <div className={rightPanelView === "ivf" ? "h-full w-full" : "hidden"}>
                 <IvfPanel
                   ivfData={ivfData}
                   ivfLoading={ivfLoading}
                   ivfError={ivfError}
                   selectedStation={selectedStation}
                 />
-              )}
+              </div>
+
             </div>
           </section>
 

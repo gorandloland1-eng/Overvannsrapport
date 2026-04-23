@@ -11,6 +11,8 @@ export interface PdfReportData {
   userId: string;
   projectName: string;
   pdfUrl: string;
+  calcPdfUrl?: string | null;        // <-- ny
+  mapImageUrls?: string[];           // <-- ny
   screenshotUrls: {
     kart?: string;
     terreng?: string;
@@ -38,6 +40,8 @@ export async function savePdfReport(report: PdfReportData): Promise<void> {
     projectName: report.projectName.trim() || "Unknown project",
     description: "Stormwater report",
     pdfUrl: report.pdfUrl,
+    calcPdfUrl: report.calcPdfUrl ?? null,        // <-- ny
+    mapImageUrls: report.mapImageUrls ?? [],      // <-- ny
     screenshotUrls: {
       kart: report.screenshotUrls?.kart ?? null,
       terreng: report.screenshotUrls?.terreng ?? null,
@@ -96,11 +100,10 @@ async function captureMapBlob(mapContainer: HTMLElement): Promise<Blob> {
 }
 
 export async function uploadMapScreenshotToFirebase(
-  mapContainer: HTMLElement,
+  blob: Blob,           // <-- tar imot ferdig Blob i stedet for HTMLElement
   projectName: string,
   filename: string
 ): Promise<string> {
-  const blob = await captureMapBlob(mapContainer);
   const safeName = projectName.trim().replace(/[^a-zA-Z0-9_\-]/g, "_") || "unknown";
   const storageRef = ref(storage, `rapporter/${safeName}/screenshots/${filename}`);
   await uploadBytes(storageRef, blob);
