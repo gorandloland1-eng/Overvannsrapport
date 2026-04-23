@@ -119,32 +119,25 @@ def download_pdf(data: PDFRequest):
 
 
 @router.get("/download-from-url")
-def download_from_url(url: str, filename: str = "rapport.pdf"):
+def download_from_url(url: str, filename: str = "fil"):
     try:
         response = requests.get(url, timeout=60)
-
         if response.status_code != 200:
             raise HTTPException(status_code=400, detail="Kunne ikke hente filen")
 
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+        content_type = response.headers.get("Content-Type", "application/octet-stream")
+
+        tmp = tempfile.NamedTemporaryFile(delete=False)
         tmp.write(response.content)
         tmp.close()
 
-        safe_filename = filename if filename.lower().endswith(".pdf") else f"{filename}.pdf"
-
         return FileResponse(
             path=tmp.name,
-            media_type="application/pdf",
-            filename=safe_filename,
-            headers={
-                "Content-Disposition": f'attachment; filename="{safe_filename}"'
-            },
+            media_type=content_type,      # <-- dynamisk, ikke hardkodet pdf
+            filename=filename,
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
-
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Nedlasting feilet: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Nedlasting feilet: {str(e)}")

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import html2canvas from "html2canvas-pro";
 import { generatePdf } from "../api/pdf";
 import { savePdfReport, uploadMapScreenshotToFirebase } from "../api/firebase";
 import type { WeatherStation } from "../api/ivf";
@@ -28,6 +29,47 @@ interface GeneratePdfOptions {
   selectedStation: WeatherStation | undefined;
 }
 
+const MAP_LAYERS: Array<{
+  key: "kart" | "terreng" | "satellitt";
+  filename: string;
+  label: string;
+}> = [
+  { key: "kart",      filename: "kart.png",      label: "Kart" },
+  { key: "terreng",   filename: "terreng.png",   label: "Terreng" },
+  { key: "satellitt", filename: "satellitt.png", label: "Satellitt" },
+];
+
+/**
+ * Switches to the given map layer, waits for tiles to render,
+ * then captures the container element using html2canvas-pro
+ * and returns the canvas as a Blob.
+ */
+async function captureLayerAsBlob(
+  container: HTMLElement,
+  setMapLayer: (layer: "kart" | "terreng" | "satellitt") => void,
+  layerKey: "kart" | "terreng" | "satellitt",
+  delayMs = 2500
+): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    setMapLayer(layerKey);
+
+    setTimeout(async () => {
+      try {
+        const canvas = await html2canvas(container, {
+          useCORS: true,
+          allowTaint: false,
+          scale: 1,
+          logging: false,
+        });
+        canvas.toBlob((blob) => resolve(blob ?? null), "image/png");
+      } catch (e) {
+        console.warn(`html2canvas-pro feilet for lag "${layerKey}":`, e);
+        resolve(null);
+      }
+    }, delayMs);
+  });
+}
+
 export function useGeneratePdf() {
   const navigate = useNavigate();
   const [pdfSaving, setPdfSaving] = useState(false);
@@ -36,44 +78,64 @@ export function useGeneratePdf() {
   async function handleGeneratePdf(opts: GeneratePdfOptions) {
     setPdfSaving(true);
     setPdfError("");
-    try {
-      const qInf = opts.infiltrationMethod === "direct"
-        ? Number(opts.manualQInf || 0)
-        : (() => {
-            const st = opts.soilTypes.find((j) => j.id === opts.selectedSoilType);
-            if (!st) return 0;
-            return st.k_m_s * (Number(opts.bottomArea || 0) * 0.5 + Number(opts.sideArea || 0) * 1.0) * 1000;
-          })();
 
-      // Ta screenshot av alle 3 kartlag
-      const screenshotUrls: { kart?: string; terreng?: string; satellitt?: string } = {};
+    try {
+      // --- Calculate Q_inf ---
+      const qInf =
+        opts.infiltrationMethod === "direct"
+          ? Number(opts.manualQInf || 0)
+          : (() => {
+              const st = opts.soilTypes.find((j) => j.id === opts.selectedSoilType);
+              if (!st) return 0;
+              return (
+                st.k_m_s *
+                (Number(opts.bottomArea || 0) * 0.5 +
+                  Number(opts.sideArea || 0) * 1.0) *
+                1000
+              );
+            })();
+
+      // --- Capture map screenshots ---
+      const screenshotUrls: {
+        kart?: string;
+        terreng?: string;
+        satellitt?: string;
+      } = {};
+
+      const mapImageUrls: string[] = [];
 
       if (opts.mapRef.current) {
-        const container = opts.mapRef.current.getContainer();
-        const layers: Array<{ key: "kart" | "terreng" | "satellitt"; filename: string }> = [
-          { key: "kart", filename: "kart.png" },
-          { key: "terreng", filename: "terreng.png" },
-          { key: "satellitt", filename: "satellitt.png" },
-        ];
+        const container: HTMLElement = opts.mapRef.current.getContainer();
 
-        for (const layer of layers) {
+        for (const layer of MAP_LAYERS) {
           try {
-            opts.setMapLayer(layer.key);
-            await new Promise((resolve) => setTimeout(resolve, 2500));
-            screenshotUrls[layer.key] = await uploadMapScreenshotToFirebase(
+            const blob = await captureLayerAsBlob(
               container,
-              opts.projectName,
-              layer.filename
+              opts.setMapLayer,
+              layer.key
             );
+
+            if (blob) {
+              // uploadMapScreenshotToFirebase now receives a Blob instead of
+              // the container element — update that helper accordingly (see note below).
+              const url = await uploadMapScreenshotToFirebase(
+                blob,
+                opts.projectName,
+                layer.filename
+              );
+              screenshotUrls[layer.key] = url;
+              mapImageUrls.push(url);
+            }
           } catch (e) {
             console.warn(`Screenshot feilet for ${layer.key}:`, e);
           }
         }
 
-        // Sett tilbake til kart
+        // Reset to default layer after all screenshots
         opts.setMapLayer("kart");
       }
 
+      // --- Generate PDFs via backend ---
       const response = await generatePdf({
         project_name: opts.projectName,
         height: opts.elevation ?? 0,
@@ -92,11 +154,14 @@ export function useGeneratePdf() {
         selected_weather_station_name: opts.selectedStation?.name ?? "",
       });
 
+      // --- Save to Firestore ---
       await savePdfReport({
         userId: opts.userId,
         projectName: opts.projectName,
         pdfUrl: response.firebase_url,
+        calcPdfUrl: response.calc_firebase_url ?? null,
         screenshotUrls,
+        mapImageUrls,
         data: {
           area: opts.area,
           returnPeriod: opts.returnPeriod,
@@ -115,7 +180,11 @@ export function useGeneratePdf() {
 
       navigate("/filer");
     } catch (e) {
-      setPdfError(e instanceof Error ? e.message : "Something went wrong generating the PDF");
+      setPdfError(
+        e instanceof Error
+          ? e.message
+          : "Something went wrong generating the PDF"
+      );
     } finally {
       setPdfSaving(false);
     }

@@ -21,7 +21,13 @@ import { usePropertyState } from "../hooks/usePropertyState";
 import { useTerrainState } from "../hooks/useTerrainState";
 import { useGeneratePdf } from "../hooks/useGeneratePdf";
 
-export default function HomePage() {
+export default function HomePage({
+  darkMode,
+  setDarkMode,
+}: {
+  darkMode: boolean;
+  setDarkMode: (v: boolean) => void;
+}) {
   const { user } = useAuth();
 
   // --- Hooks ---
@@ -55,7 +61,6 @@ export default function HomePage() {
   } = useTerrainState();
 
   // --- UI state ---
-  const [darkMode, setDarkMode] = useState(false);
   const [rightPanelView, setRightPanelView] = useState<"map" | "ivf">("map");
   const [mapLayer, setMapLayer] = useState<"kart" | "terreng" | "satellitt">("kart");
 
@@ -76,9 +81,6 @@ export default function HomePage() {
   const singleClickTimer = useRef(null);
 
   // --- Effects ---
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-  }, [darkMode]);
 
   useEffect(() => {
     fetchWeatherStations()
