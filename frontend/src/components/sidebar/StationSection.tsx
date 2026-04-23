@@ -1,3 +1,5 @@
+import { ChevronDown } from "lucide-react";
+
 type Station = {
   id: string;
   name: string;
@@ -26,8 +28,7 @@ export default function StationSection({
   dropdownOpen,
   setDropdownOpen,
 }: Props) {
-
-  const selectedStation = stations.find(s => s.id === selectedStationId);
+  const selectedStation = stations.find((s) => s.id === selectedStationId);
 
   const filteredStations = stations.filter((s) =>
     `${s.name} ${s.municipality ?? ""} ${s.county ?? ""}`
@@ -41,7 +42,7 @@ export default function StationSection({
         Weather station
       </label>
 
-      <div className="relative">
+      <div className="relative z-10">
         <input
           value={search}
           onChange={(e) => {
@@ -51,39 +52,55 @@ export default function StationSection({
           onFocus={() => setDropdownOpen(true)}
           placeholder={
             selectedStation
-              ? `${selectedStation.name}${selectedStation.municipality ? ` (${selectedStation.municipality})` : ""}`
+              ? `${selectedStation.name}${
+                  selectedStation.municipality
+                    ? ` (${selectedStation.municipality})`
+                    : ""
+                }`
               : "Search..."
           }
-          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none dark:bg-slate-900 dark:text-slate-100"
+          className="h-12 w-full rounded-[22px] border border-slate-200 bg-white px-5 pr-12 text-base text-slate-900 outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:ring-slate-700"
         />
 
         <button
           type="button"
           onClick={() => setDropdownOpen(!dropdownOpen)}
-          className="absolute right-3 top-1/2 -translate-y-1/2"
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-700 dark:text-slate-200"
+          aria-label="Open weather station dropdown"
         >
-          ▾
+          <ChevronDown
+            size={20}
+            strokeWidth={2.2}
+            className={`transition-transform ${
+              dropdownOpen ? "rotate-180" : ""
+            }`}
+          />
         </button>
 
         {dropdownOpen && (
-          <div className="absolute z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-xl border bg-white dark:bg-slate-900">
+          <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-30 max-h-44 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
             {filteredStations.length > 0 ? (
               filteredStations.map((station) => (
                 <button
                   key={station.id}
+                  type="button"
                   onClick={() => {
                     setSelectedStationId(station.id);
                     setSearch("");
                     setDropdownOpen(false);
                   }}
-                  className="block w-full px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className={`block w-full px-4 py-2.5 text-left text-sm transition hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800 ${
+                    selectedStationId === station.id
+                      ? "bg-slate-100 dark:bg-slate-800"
+                      : ""
+                  }`}
                 >
                   {station.name}
                   {station.municipality && ` (${station.municipality})`}
                 </button>
               ))
             ) : (
-              <div className="px-3 py-2 text-sm text-slate-500">
+              <div className="px-4 py-2.5 text-sm text-slate-500 dark:text-slate-400">
                 No stations found
               </div>
             )}
