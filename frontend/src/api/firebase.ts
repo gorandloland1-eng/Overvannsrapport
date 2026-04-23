@@ -11,7 +11,11 @@ export interface PdfReportData {
   userId: string;
   projectName: string;
   pdfUrl: string;
-  screenshotUrl: string | null;
+  screenshotUrls: {
+    kart?: string;
+    terreng?: string;
+    satellitt?: string;
+  } | null;
   data: {
     area: string;
     returnPeriod: string;
@@ -34,7 +38,11 @@ export async function savePdfReport(report: PdfReportData): Promise<void> {
     projectName: report.projectName.trim() || "Unknown project",
     description: "Stormwater report",
     pdfUrl: report.pdfUrl,
-    screenshotUrl: report.screenshotUrl,
+    screenshotUrls: {
+      kart: report.screenshotUrls?.kart ?? null,
+      terreng: report.screenshotUrls?.terreng ?? null,
+      satellitt: report.screenshotUrls?.satellitt ?? null,
+    },
     createdAt: serverTimestamp(),
     data: report.data,
   });
@@ -44,88 +52,80 @@ export async function savePdfReport(report: PdfReportData): Promise<void> {
 // SCREENSHOTS
 // ---------------------------------------------------------------------------
 
-export async function uploadMapScreenshot(
-  mapContainer: HTMLElement,
-  userId: string
-): Promise<string> {
-  const html2canvas = (await import("html2canvas")).default;
+async function captureMapBlob(mapContainer: HTMLElement): Promise<Blob> {
+  const html2canvas = (await import("html2canvas-pro")).default;
+
+  // Patch oklab/oklch farger direkte på elementet FØR html2canvas kjøres
+  const allElements = mapContainer.querySelectorAll("*");
+  const patched: Array<{ el: HTMLElement; prop: string; original: string }> = [];
+
+  allElements.forEach((node) => {
+    const el = node as HTMLElement;
+    try {
+      const style = window.getComputedStyle(el);
+      const props = ["color", "backgroundColor", "borderTopColor", "borderRightColor", "borderBottomColor", "borderLeftColor"];
+      props.forEach((prop) => {
+        const val = style[prop];
+        if (val && (val.includes("oklab") || val.includes("oklch"))) {
+          patched.push({ el, prop, original: el.style[prop] });
+          el.style[prop] = prop.includes("background") ? "#ffffff" : "#000000";
+        }
+      });
+    } catch (_) {}
+  });
 
   const canvas = await html2canvas(mapContainer, {
     useCORS: true,
     allowTaint: true,
+    backgroundColor: "#ffffff",
+    ignoreElements: (element) =>
+      element.classList.contains("leaflet-control-container"),
+  });
+
+  // Restore original styles
+  patched.forEach(({ el, prop, original }) => {
+    el.style[prop] = original;
   });
 
   return new Promise((resolve, reject) => {
-    canvas.toBlob(async (blob) => {
+    canvas.toBlob((blob) => {
       if (!blob) return reject(new Error("Failed to create blob"));
-      const storageRef = ref(storage, `screenshots/${userId}/${Date.now()}.png`);
-      await uploadBytes(storageRef, blob);
-      const url = await getDownloadURL(storageRef);
-      resolve(url);
+      resolve(blob);
     }, "image/png");
   });
 }
 
-async function handleGeneratePdf() {
-  setPdfSaving(true);
-  setPdfError("");
-  try {
-    const qInf = infiltrationMethod === "direct"
-      ? Number(manualQInf || 0)
-      : (() => {
-          const st = soilTypes.find((j) => j.id === selectedSoilType);
-          if (!st) return 0;
-          return st.k_m_s * (Number(bottomArea || 0) * 0.5 + Number(sideArea || 0) * 1.0) * 1000;
-        })();
+export async function uploadMapScreenshotToFirebase(
+  mapContainer: HTMLElement,
+  projectName: string,
+  filename: string
+): Promise<string> {
+  const blob = await captureMapBlob(mapContainer);
+  const safeName = projectName.trim().replace(/[^a-zA-Z0-9_\-]/g, "_") || "unknown";
+  const storageRef = ref(storage, `rapporter/${safeName}/screenshots/${filename}`);
+  await uploadBytes(storageRef, blob);
+  return getDownloadURL(storageRef);
+}
 
-    // Ta screenshot av kartet
-    let screenshotUrl: string | null = null;
-    if (mapRef.current) {
-      try {
-        screenshotUrl = await uploadMapScreenshot(mapRef.current.getContainer(), user.uid);
-      } catch (e) {
-        console.warn("Screenshot feilet, fortsetter uten:", e);
-      }
-    }
+export async function saveMapScreenshotLocally(
+  mapContainer: HTMLElement,
+  projectName: string
+): Promise<string> {
+  const blob = await captureMapBlob(mapContainer);
 
-    const response = await generatePdf({
-      project_name: projectName,
-      height: elevation ?? 0,
-      length: length ?? 0,
-      time_of_concentration: concentrationTime ?? 0,
-      areal: Number(area),
-      returperiode: Number(returnPeriod),
-      klimafaktor: Number(climateFactor),
-      maks_paslipp: Number(maxDischarge),
-      infiltrasjonskapasitet: qInf,
-      eiendom_adresse: propertyAddress,
-      eiendom_gnr: propertyMatrikkel?.gnr ?? null,
-      eiendom_bnr: propertyMatrikkel?.bnr ?? null,
-      phi: 0.9,
-      selected_weather_station: selectedStationId,
-      selected_weather_station_name: selectedStation?.name ?? "",
-    });
+  const formData = new FormData();
+  formData.append("project_name", projectName);
+  formData.append("image", blob, "map.png");
 
-    await savePdfReport({
-      userId: user.uid,
-      projectName,
-      pdfUrl: response.firebase_url,
-      screenshotUrl,
-      data: {
-        area, returnPeriod, climateFactor, maxDischarge,
-        elevation, length, concentrationTime,
-        selectedWeatherStationName: selectedStation?.name ?? "",
-        infiltration: qInf,
-        address: propertyAddress,
-        gnr: propertyMatrikkel?.gnr ?? null,
-        bnr: propertyMatrikkel?.bnr ?? null,
-      },
-    });
+  const res = await fetch("http://localhost:8000/uploads/screenshot", {
+    method: "POST",
+    body: formData,
+  });
 
-    navigate("/filer");
-  } catch (e) {
-    setPdfError(e instanceof Error ? e.message : "Something went wrong generating the PDF");
-  } finally {
-    setPdfSaving(false);
+  if (!res.ok) {
+    throw new Error((await res.text()) || "Could not save screenshot locally");
   }
+
+  const data = await res.json();
+  return data.filepath;
 }

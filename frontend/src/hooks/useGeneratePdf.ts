@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { generatePdf } from "../api/pdf";
-import { savePdfReport, uploadMapScreenshot } from "../api/firebase";
+import { savePdfReport, uploadMapScreenshotToFirebase } from "../api/firebase";
 import type { WeatherStation } from "../api/ivf";
 
 interface GeneratePdfOptions {
   userId: string;
   mapRef: React.MutableRefObject<any>;
+  setMapLayer: (layer: "kart" | "terreng" | "satellitt") => void;
   projectName: string;
   elevation: number | null;
   length: number | null;
@@ -44,13 +45,33 @@ export function useGeneratePdf() {
             return st.k_m_s * (Number(opts.bottomArea || 0) * 0.5 + Number(opts.sideArea || 0) * 1.0) * 1000;
           })();
 
-      let screenshotUrl: string | null = null;
+      // Ta screenshot av alle 3 kartlag
+      const screenshotUrls: { kart?: string; terreng?: string; satellitt?: string } = {};
+
       if (opts.mapRef.current) {
-        try {
-          screenshotUrl = await uploadMapScreenshot(opts.mapRef.current.getContainer(), opts.userId);
-        } catch (e) {
-          console.warn("Screenshot feilet, fortsetter uten:", e);
+        const container = opts.mapRef.current.getContainer();
+        const layers: Array<{ key: "kart" | "terreng" | "satellitt"; filename: string }> = [
+          { key: "kart", filename: "kart.png" },
+          { key: "terreng", filename: "terreng.png" },
+          { key: "satellitt", filename: "satellitt.png" },
+        ];
+
+        for (const layer of layers) {
+          try {
+            opts.setMapLayer(layer.key);
+            await new Promise((resolve) => setTimeout(resolve, 2500));
+            screenshotUrls[layer.key] = await uploadMapScreenshotToFirebase(
+              container,
+              opts.projectName,
+              layer.filename
+            );
+          } catch (e) {
+            console.warn(`Screenshot feilet for ${layer.key}:`, e);
+          }
         }
+
+        // Sett tilbake til kart
+        opts.setMapLayer("kart");
       }
 
       const response = await generatePdf({
@@ -75,7 +96,7 @@ export function useGeneratePdf() {
         userId: opts.userId,
         projectName: opts.projectName,
         pdfUrl: response.firebase_url,
-        screenshotUrl,
+        screenshotUrls,
         data: {
           area: opts.area,
           returnPeriod: opts.returnPeriod,
