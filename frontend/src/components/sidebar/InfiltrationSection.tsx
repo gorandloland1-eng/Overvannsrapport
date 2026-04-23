@@ -1,3 +1,6 @@
+import { useMemo, useState } from "react";
+import { ChevronDown } from "lucide-react";
+
 type SoilType = {
   id: string;
   navn: string;
@@ -16,8 +19,23 @@ export default function InfiltrationSection({
   setField,
   soilTypes,
 }: Props) {
+  const [soilDropdownOpen, setSoilDropdownOpen] = useState(false);
+  const [soilSearch, setSoilSearch] = useState("");
+
+  const selectedSoil = useMemo(
+    () => soilTypes.find((j) => j.id === form.selectedSoilType),
+    [soilTypes, form.selectedSoilType]
+  );
+
+  const filteredSoilTypes = useMemo(() => {
+    const q = soilSearch.toLowerCase();
+    return soilTypes.filter((jt) =>
+      `${jt.navn} ${jt.beskrivelse} ${jt.k_m_s}`.toLowerCase().includes(q)
+    );
+  }, [soilTypes, soilSearch]);
+
   return (
-    <section>
+    <section className="relative z-20">
       <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
         Infiltration capacity
       </label>
@@ -66,22 +84,71 @@ export default function InfiltrationSection({
 
       {form.infiltrationMethod === "soiltype" && (
         <div className="space-y-3">
-          <div>
+          <div className="relative z-30">
             <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">
               Soil type
             </label>
-            <select
-              value={form.selectedSoilType}
-              onChange={(e) => setField("selectedSoilType", e.target.value)}
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
-            >
-              <option value="">Select soil type...</option>
-              {soilTypes.map((jt) => (
-                <option key={jt.id} value={jt.id}>
-                  {jt.navn} — {jt.beskrivelse} (k = {jt.k_m_s} m/s)
-                </option>
-              ))}
-            </select>
+
+            <div className="relative">
+              <input
+                value={soilSearch}
+                onChange={(e) => {
+                  setSoilSearch(e.target.value);
+                  setSoilDropdownOpen(true);
+                }}
+                onFocus={() => setSoilDropdownOpen(true)}
+                placeholder={
+                  selectedSoil
+                    ? `${selectedSoil.navn} — ${selectedSoil.beskrivelse} (k = ${selectedSoil.k_m_s} m/s)`
+                    : "Select soil type..."
+                }
+                className="h-12 w-full rounded-[22px] border border-slate-200 bg-white px-5 pr-12 text-base text-slate-900 outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:ring-slate-700"
+              />
+
+              <button
+                type="button"
+                onClick={() => setSoilDropdownOpen(!soilDropdownOpen)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-700 dark:text-slate-200"
+                aria-label="Open soil type dropdown"
+              >
+                <ChevronDown
+                  size={20}
+                  strokeWidth={2.2}
+                  className={`transition-transform ${
+                    soilDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {soilDropdownOpen && (
+                <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-[9999] max-h-44 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                  {filteredSoilTypes.length > 0 ? (
+                    filteredSoilTypes.map((jt) => (
+                      <button
+                        key={jt.id}
+                        type="button"
+                        onClick={() => {
+                          setField("selectedSoilType", jt.id);
+                          setSoilSearch("");
+                          setSoilDropdownOpen(false);
+                        }}
+                        className={`block w-full px-4 py-2.5 text-left text-sm transition hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800 ${
+                          form.selectedSoilType === jt.id
+                            ? "bg-slate-100 dark:bg-slate-800"
+                            : ""
+                        }`}
+                      >
+                        {jt.navn} — {jt.beskrivelse} (k = {jt.k_m_s} m/s)
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-2.5 text-sm text-slate-500 dark:text-slate-400">
+                      No soil types found
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -120,7 +187,8 @@ export default function InfiltrationSection({
 
             const qInf =
               jt.k_m_s *
-              (parseFloat(form.bottomArea) * 0.5 + parseFloat(form.sideArea) * 1.0) *
+              (parseFloat(form.bottomArea) * 0.5 +
+                parseFloat(form.sideArea) * 1.0) *
               1000;
 
             return (
