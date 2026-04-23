@@ -1,0 +1,853 @@
+{
+  "cached_at": 1776888983.2947662,
+  "stations": [
+    {
+      "id": "SN36055",
+      "name": "ARENDAL SENTRUM",
+      "municipality": "ARENDAL",
+      "county": "AGDER",
+      "lon": 8.7653,
+      "lat": 58.4603
+    },
+    {
+      "id": "SN19710",
+      "name": "ASKER",
+      "municipality": "ASKER",
+      "county": "AKERSHUS",
+      "lon": 10.4358,
+      "lat": 59.8558
+    },
+    {
+      "id": "SN3720",
+      "name": "ASKIM - KYKKELSRUD",
+      "municipality": "INDRE ØSTFOLD",
+      "county": "ØSTFOLD",
+      "lon": 11.0962,
+      "lat": 59.5873
+    },
+    {
+      "id": "SN3810",
+      "name": "ASKIM II",
+      "municipality": "INDRE ØSTFOLD",
+      "county": "ØSTFOLD",
+      "lon": 11.1662,
+      "lat": 59.5872
+    },
+    {
+      "id": "SN50175",
+      "name": "AUSTEVOLL",
+      "municipality": "AUSTEVOLL",
+      "county": "VESTLAND",
+      "lon": 5.2038,
+      "lat": 60.0167
+    },
+    {
+      "id": "SN89350",
+      "name": "BARDUFOSS",
+      "municipality": "MÅLSELV",
+      "county": "TROMS",
+      "lon": 18.5437,
+      "lat": 69.0577
+    },
+    {
+      "id": "SN50539",
+      "name": "BERGEN - FLORIDA UIB",
+      "municipality": "BERGEN",
+      "county": "VESTLAND",
+      "lon": 5.332,
+      "lat": 60.3837
+    },
+    {
+      "id": "SN50480",
+      "name": "BERGEN - SANDSLI",
+      "municipality": "BERGEN",
+      "county": "VESTLAND",
+      "lon": 5.2777,
+      "lat": 60.2913
+    },
+    {
+      "id": "SN17780",
+      "name": "BLEKSLITJERN",
+      "municipality": "NESODDEN",
+      "county": "AKERSHUS",
+      "lon": 10.6308,
+      "lat": 59.8095
+    },
+    {
+      "id": "SN82310",
+      "name": "BODØ - SKIVIKA",
+      "municipality": "BODØ",
+      "county": "NORDLAND",
+      "lon": 14.4309,
+      "lat": 67.3084
+    },
+    {
+      "id": "SN30248",
+      "name": "BREVIK",
+      "municipality": "PORSGRUNN",
+      "county": "TELEMARK",
+      "lon": 9.7013,
+      "lat": 59.0537
+    },
+    {
+      "id": "SN26932",
+      "name": "DRAMMEN - AUSTAD",
+      "municipality": "DRAMMEN",
+      "county": "BUSKERUD",
+      "lon": 10.2168,
+      "lat": 59.721
+    },
+    {
+      "id": "SN26594",
+      "name": "DRAMMEN - DANVIK",
+      "municipality": "DRAMMEN",
+      "county": "BUSKERUD",
+      "lon": 10.1973,
+      "lat": 59.7327
+    },
+    {
+      "id": "SN27015",
+      "name": "DRAMMEN - JARLSBERGVEIEN",
+      "municipality": "DRAMMEN",
+      "county": "BUSKERUD",
+      "lon": 10.1458,
+      "lat": 59.7192
+    },
+    {
+      "id": "SN26934",
+      "name": "DRAMMEN - SOLUMSTRAND",
+      "municipality": "DRAMMEN",
+      "county": "BUSKERUD",
+      "lon": 10.2688,
+      "lat": 59.7112
+    },
+    {
+      "id": "SN26898",
+      "name": "DRAMMEN - ÅSSIDEN",
+      "municipality": "DRAMMEN",
+      "county": "BUSKERUD",
+      "lon": 10.1382,
+      "lat": 59.7538
+    },
+    {
+      "id": "SN26872",
+      "name": "DRAMMEN - ØREN SKOLE",
+      "municipality": "DRAMMEN",
+      "county": "BUSKERUD",
+      "lon": 10.1705,
+      "lat": 59.7523
+    },
+    {
+      "id": "SN26864",
+      "name": "DRAMMEN SYKEHUS",
+      "municipality": "DRAMMEN",
+      "county": "BUSKERUD",
+      "lon": 10.195,
+      "lat": 59.7497
+    },
+    {
+      "id": "SN26862",
+      "name": "DRAMMEN TINGHUS",
+      "municipality": "DRAMMEN",
+      "county": "BUSKERUD",
+      "lon": 10.2118,
+      "lat": 59.744
+    },
+    {
+      "id": "SN17775",
+      "name": "FAGERSTRAND",
+      "municipality": "NESODDEN",
+      "county": "AKERSHUS",
+      "lon": 10.5886,
+      "lat": 59.7377
+    },
+    {
+      "id": "SN51010",
+      "name": "FOSSMARK",
+      "municipality": "VAKSDAL",
+      "county": "VESTLAND",
+      "lon": 5.7243,
+      "lat": 60.5205
+    },
+    {
+      "id": "SN3030",
+      "name": "FREDRIKSTAD",
+      "municipality": "FREDRIKSTAD",
+      "county": "ØSTFOLD",
+      "lon": 10.9632,
+      "lat": 59.2307
+    },
+    {
+      "id": "SN4781",
+      "name": "GARDERMOEN SØR",
+      "municipality": "ULLENSAKER",
+      "county": "AKERSHUS",
+      "lon": 11.0743,
+      "lat": 60.1883
+    },
+    {
+      "id": "SN19490",
+      "name": "GJETTUM PLU",
+      "municipality": "BÆRUM",
+      "county": "AKERSHUS",
+      "lon": 10.5122,
+      "lat": 59.9058
+    },
+    {
+      "id": "SN12290",
+      "name": "HAMAR II",
+      "municipality": "HAMAR",
+      "county": "INNLANDET",
+      "lon": 11.0948,
+      "lat": 60.80056
+    },
+    {
+      "id": "SN65451",
+      "name": "HITRA - SANDSTAD II",
+      "municipality": "HITRA",
+      "county": "TRØNDELAG",
+      "lon": 9.1123236,
+      "lat": 63.5184178
+    },
+    {
+      "id": "SN27120",
+      "name": "HORTEN - NYKIRKE",
+      "municipality": "HORTEN",
+      "county": "VESTFOLD",
+      "lon": 10.3847,
+      "lat": 59.4283
+    },
+    {
+      "id": "SN27160",
+      "name": "HORTEN II",
+      "municipality": "HORTEN",
+      "county": "VESTFOLD",
+      "lon": 10.4647,
+      "lat": 59.4198
+    },
+    {
+      "id": "SN47240",
+      "name": "KARMØY - BREKKEVANN",
+      "municipality": "KARMØY",
+      "county": "ROGALAND",
+      "lon": 5.2623,
+      "lat": 59.2695
+    },
+    {
+      "id": "SN99370",
+      "name": "KIRKENES LUFTHAVN",
+      "municipality": "SØR-VARANGER",
+      "county": "FINNMARK",
+      "lon": 29.9057,
+      "lat": 69.7287
+    },
+    {
+      "id": "SN39201",
+      "name": "KRISTIANSAND - BRÅVANN",
+      "municipality": "KRISTIANSAND",
+      "county": "AGDER",
+      "lon": 7.9383,
+      "lat": 58.1095
+    },
+    {
+      "id": "SN39010",
+      "name": "KRISTIANSAND - FIDJEÅSEN",
+      "municipality": "KRISTIANSAND",
+      "county": "AGDER",
+      "lon": 8.0947,
+      "lat": 58.1302
+    },
+    {
+      "id": "SN39030",
+      "name": "KRISTIANSAND - HÅNES",
+      "municipality": "KRISTIANSAND",
+      "county": "AGDER",
+      "lon": 8.0915,
+      "lat": 58.1813
+    },
+    {
+      "id": "SN39150",
+      "name": "KRISTIANSAND - SØMSKLEIVA",
+      "municipality": "KRISTIANSAND",
+      "county": "AGDER",
+      "lon": 8.052,
+      "lat": 58.1502
+    },
+    {
+      "id": "SN39165",
+      "name": "KRISTIANSAND BRANNSTASJON",
+      "municipality": "KRISTIANSAND",
+      "county": "AGDER",
+      "lon": 7.9993,
+      "lat": 58.1555
+    },
+    {
+      "id": "SN64300",
+      "name": "KRISTIANSUND - KARIHOLA",
+      "municipality": "KRISTIANSUND",
+      "county": "MØRE OG ROMSDAL",
+      "lon": 7.7027,
+      "lat": 63.1257
+    },
+    {
+      "id": "SN68050",
+      "name": "LADE",
+      "municipality": "TRONDHEIM",
+      "county": "TRØNDELAG",
+      "lon": 10.4428,
+      "lat": 63.4428
+    },
+    {
+      "id": "SN30249",
+      "name": "LANGANGEN",
+      "municipality": "PORSGRUNN",
+      "county": "TELEMARK",
+      "lon": 9.802,
+      "lat": 59.0875
+    },
+    {
+      "id": "SN4190",
+      "name": "LILLESTRØM - BADEVEIEN",
+      "municipality": "LILLESTRØM",
+      "county": "AKERSHUS",
+      "lon": 11.02747,
+      "lat": 59.96816
+    },
+    {
+      "id": "SN4140",
+      "name": "LILLESTRØM - RÅDHUSET",
+      "municipality": "LILLESTRØM",
+      "county": "AKERSHUS",
+      "lon": 11.04008,
+      "lat": 59.95455
+    },
+    {
+      "id": "SN4110",
+      "name": "LØRENSKOG - HANEBORG",
+      "municipality": "LØRENSKOG",
+      "county": "AKERSHUS",
+      "lon": 10.9762,
+      "lat": 59.946
+    },
+    {
+      "id": "SN41090",
+      "name": "MANDAL III",
+      "municipality": "LINDESNES",
+      "county": "AGDER",
+      "lon": 7.4517,
+      "lat": 58.0247
+    },
+    {
+      "id": "SN62290",
+      "name": "MOLDE - NØISOMHED",
+      "municipality": "MOLDE",
+      "county": "MØRE OG ROMSDAL",
+      "lon": 7.2275,
+      "lat": 62.7413
+    },
+    {
+      "id": "SN27460",
+      "name": "NØTTERØY - BORGHEIM",
+      "municipality": "FÆRDER",
+      "county": "VESTFOLD",
+      "lon": 10.4103,
+      "lat": 59.2173
+    },
+    {
+      "id": "SN27403",
+      "name": "NØTTERØY - KNARRBERG",
+      "municipality": "FÆRDER",
+      "county": "VESTFOLD",
+      "lon": 10.45442,
+      "lat": 59.2084
+    },
+    {
+      "id": "SN27433",
+      "name": "NØTTERØY - TENVIK",
+      "municipality": "FÆRDER",
+      "county": "VESTFOLD",
+      "lon": 10.3655,
+      "lat": 59.1745
+    },
+    {
+      "id": "SN27406",
+      "name": "NØTTERØY - TORØD",
+      "municipality": "FÆRDER",
+      "county": "VESTFOLD",
+      "lon": 10.4238,
+      "lat": 59.169
+    },
+    {
+      "id": "SN27435",
+      "name": "NØTTERØY - VESTSKOGEN",
+      "municipality": "FÆRDER",
+      "county": "VESTFOLD",
+      "lon": 10.4023,
+      "lat": 59.2417
+    },
+    {
+      "id": "SN17005",
+      "name": "ONSØY - ØYENKILEN",
+      "municipality": "FREDRIKSTAD",
+      "county": "ØSTFOLD",
+      "lon": 10.8487,
+      "lat": 59.1735
+    },
+    {
+      "id": "SN47890",
+      "name": "OPSTVEIT",
+      "municipality": "KVINNHERAD",
+      "county": "VESTLAND",
+      "lon": 6.017,
+      "lat": 59.8578
+    },
+    {
+      "id": "SN18245",
+      "name": "OSLO - AMMERUD",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.8737,
+      "lat": 59.9652
+    },
+    {
+      "id": "SN18920",
+      "name": "OSLO - BESSERUD",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.671,
+      "lat": 59.9573
+    },
+    {
+      "id": "SN18390",
+      "name": "OSLO - BJØLSEN",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.7483,
+      "lat": 59.9418
+    },
+    {
+      "id": "SN18701",
+      "name": "OSLO - BLINDERN PLU",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.7202,
+      "lat": 59.9423
+    },
+    {
+      "id": "SN18703",
+      "name": "OSLO - BLINDERN TESTFELT",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.7194,
+      "lat": 59.94256
+    },
+    {
+      "id": "SN18215",
+      "name": "OSLO - BROBEKK",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.8315,
+      "lat": 59.9323
+    },
+    {
+      "id": "SN18420",
+      "name": "OSLO - DISEN",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.7903,
+      "lat": 59.946
+    },
+    {
+      "id": "SN18235",
+      "name": "OSLO - FURUSET",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.8972,
+      "lat": 59.942
+    },
+    {
+      "id": "SN18269",
+      "name": "OSLO - HAUGENSTUA",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.9035,
+      "lat": 59.9535
+    },
+    {
+      "id": "SN18210",
+      "name": "OSLO - HOVIN",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.804,
+      "lat": 59.923
+    },
+    {
+      "id": "SN18260",
+      "name": "OSLO - HØYBRÅTEN",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.9257,
+      "lat": 59.9468
+    },
+    {
+      "id": "SN18195",
+      "name": "OSLO - HØYENHALL",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.8212,
+      "lat": 59.9033
+    },
+    {
+      "id": "SN18440",
+      "name": "OSLO - KJELSÅS",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.77564,
+      "lat": 59.95995
+    },
+    {
+      "id": "SN18020",
+      "name": "OSLO - LAMBERTSETER",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.8185,
+      "lat": 59.8775
+    },
+    {
+      "id": "SN17980",
+      "name": "OSLO - LJABRUVEIEN",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.8237,
+      "lat": 59.8427
+    },
+    {
+      "id": "SN18205",
+      "name": "OSLO - LØREN",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.7902,
+      "lat": 59.9287
+    },
+    {
+      "id": "SN18233",
+      "name": "OSLO - NYLAND",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.864,
+      "lat": 59.9452
+    },
+    {
+      "id": "SN18165",
+      "name": "OSLO - RYEN",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.8013,
+      "lat": 59.8963
+    },
+    {
+      "id": "SN18645",
+      "name": "OSLO - SOLLI PLASS",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.7202,
+      "lat": 59.9142
+    },
+    {
+      "id": "SN18225",
+      "name": "OSLO - TONSENHAGEN",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.8293,
+      "lat": 59.9467
+    },
+    {
+      "id": "SN18180",
+      "name": "OSLO - TRASOP",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.847,
+      "lat": 59.907
+    },
+    {
+      "id": "SN18310",
+      "name": "OSLO - TØYEN",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.7747,
+      "lat": 59.9147
+    },
+    {
+      "id": "SN18270",
+      "name": "OSLO - VESTLI",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.9185,
+      "lat": 59.9683
+    },
+    {
+      "id": "SN18170",
+      "name": "OSLO - ØSTENSJØ",
+      "municipality": "OSLO",
+      "county": "OSLO",
+      "lon": 10.8368,
+      "lat": 59.8955
+    },
+    {
+      "id": "SN16040",
+      "name": "OTTA - SKANSEN",
+      "municipality": "SEL",
+      "county": "INNLANDET",
+      "lon": 9.5413,
+      "lat": 61.7782
+    },
+    {
+      "id": "SN30270",
+      "name": "PORSGRUNN - KJØLNES",
+      "municipality": "PORSGRUNN",
+      "county": "TELEMARK",
+      "lon": 9.6663,
+      "lat": 59.1405
+    },
+    {
+      "id": "SN69020",
+      "name": "RANHEIM",
+      "municipality": "TRONDHEIM",
+      "county": "TRØNDELAG",
+      "lon": 10.515,
+      "lat": 63.4268
+    },
+    {
+      "id": "SN3120",
+      "name": "ROLVSØY - ELVENESVEIEN",
+      "municipality": "FREDRIKSTAD",
+      "county": "ØSTFOLD",
+      "lon": 11.0207,
+      "lat": 59.2597
+    },
+    {
+      "id": "SN27564",
+      "name": "SANDEFJORD - MOSSERØD",
+      "municipality": "SANDEFJORD",
+      "county": "VESTFOLD",
+      "lon": 10.2025,
+      "lat": 59.1505
+    },
+    {
+      "id": "SN27590",
+      "name": "SANDEFJORD - SENTRUM",
+      "municipality": "SANDEFJORD",
+      "county": "VESTFOLD",
+      "lon": 10.2195,
+      "lat": 59.129
+    },
+    {
+      "id": "SN44730",
+      "name": "SANDNES - ROVIK",
+      "municipality": "SANDNES",
+      "county": "ROGALAND",
+      "lon": 5.7592,
+      "lat": 58.8662
+    },
+    {
+      "id": "SN68120",
+      "name": "SAUPSTAD",
+      "municipality": "TRONDHEIM",
+      "county": "TRØNDELAG",
+      "lon": 10.3597,
+      "lat": 63.3628
+    },
+    {
+      "id": "SN30320",
+      "name": "SKIEN - ELSTRØM",
+      "municipality": "SKIEN",
+      "county": "TELEMARK",
+      "lon": 9.5895,
+      "lat": 59.1992
+    },
+    {
+      "id": "SN90495",
+      "name": "STAKKEVOLLAN",
+      "municipality": "TROMSØ",
+      "county": "TROMS",
+      "lon": 18.982,
+      "lat": 69.6942
+    },
+    {
+      "id": "SN44660",
+      "name": "STAVANGER - HUNDVÅG",
+      "municipality": "STAVANGER",
+      "county": "ROGALAND",
+      "lon": 5.7193,
+      "lat": 58.9987
+    },
+    {
+      "id": "SN44580",
+      "name": "STAVANGER - MADLA",
+      "municipality": "STAVANGER",
+      "county": "ROGALAND",
+      "lon": 5.6697,
+      "lat": 58.9482
+    },
+    {
+      "id": "SN44620",
+      "name": "STAVANGER - TASTA",
+      "municipality": "STAVANGER",
+      "county": "ROGALAND",
+      "lon": 5.6847,
+      "lat": 58.9875
+    },
+    {
+      "id": "SN44640",
+      "name": "STAVANGER - VÅLAND",
+      "municipality": "STAVANGER",
+      "county": "ROGALAND",
+      "lon": 5.7278,
+      "lat": 58.9563
+    },
+    {
+      "id": "SN63420",
+      "name": "SUNNDALSØRA III",
+      "municipality": "SUNNDAL",
+      "county": "MØRE OG ROMSDAL",
+      "lon": 8.5473,
+      "lat": 62.6785
+    },
+    {
+      "id": "SN68125",
+      "name": "SVERRESBORG",
+      "municipality": "TRONDHEIM",
+      "county": "TRØNDELAG",
+      "lon": 10.3498,
+      "lat": 63.4223
+    },
+    {
+      "id": "SN50503",
+      "name": "SÆDALEN",
+      "municipality": "BERGEN",
+      "county": "VESTLAND",
+      "lon": 5.3967,
+      "lat": 60.35
+    },
+    {
+      "id": "SN52860",
+      "name": "TAKLE",
+      "municipality": "GULEN",
+      "county": "VESTLAND",
+      "lon": 5.3813,
+      "lat": 61.0272
+    },
+    {
+      "id": "SN44190",
+      "name": "TIME - LYE",
+      "municipality": "TIME",
+      "county": "ROGALAND",
+      "lon": 5.7262,
+      "lat": 58.7345
+    },
+    {
+      "id": "SN27470",
+      "name": "TORP",
+      "municipality": "SANDEFJORD",
+      "county": "VESTFOLD",
+      "lon": 10.2553,
+      "lat": 59.1845
+    },
+    {
+      "id": "SN90510",
+      "name": "TROMSDALEN",
+      "municipality": "TROMSØ",
+      "county": "TROMS",
+      "lon": 19.0065,
+      "lat": 69.6508
+    },
+    {
+      "id": "SN90451",
+      "name": "TROMSØ PLU",
+      "municipality": "TROMSØ",
+      "county": "TROMS",
+      "lon": 18.9365,
+      "lat": 69.6537
+    },
+    {
+      "id": "SN68230",
+      "name": "TRONDHEIM - RISVOLLAN",
+      "municipality": "TRONDHEIM",
+      "county": "TRØNDELAG",
+      "lon": 10.4228226,
+      "lat": 63.3986067
+    },
+    {
+      "id": "SN68863",
+      "name": "TRONDHEIM - VOLL PLU",
+      "municipality": "TRONDHEIM",
+      "county": "TRØNDELAG",
+      "lon": 10.4535,
+      "lat": 63.4107
+    },
+    {
+      "id": "SN27270",
+      "name": "TØNSBERG - KILEN",
+      "municipality": "TØNSBERG",
+      "county": "VESTFOLD",
+      "lon": 10.4312,
+      "lat": 59.2782
+    },
+    {
+      "id": "SN60640",
+      "name": "VALLDAL - MURI",
+      "municipality": "FJORD",
+      "county": "MØRE OG ROMSDAL",
+      "lon": 7.2525,
+      "lat": 62.297
+    },
+    {
+      "id": "SN4090",
+      "name": "VALLERUDÅSEN",
+      "municipality": "LØRENSKOG",
+      "county": "AKERSHUS",
+      "lon": 10.9425,
+      "lat": 59.914
+    },
+    {
+      "id": "SN60945",
+      "name": "ÅLESUND IV",
+      "municipality": "ÅLESUND",
+      "county": "MØRE OG ROMSDAL",
+      "lon": 6.2108,
+      "lat": 62.4703
+    },
+    {
+      "id": "SN61340",
+      "name": "ÅNDALSNES - KAMSHAUGEN",
+      "municipality": "RAUMA",
+      "county": "MØRE OG ROMSDAL",
+      "lon": 7.672,
+      "lat": 62.5643
+    },
+    {
+      "id": "SN17870",
+      "name": "ÅS - RUSTADSKOGEN",
+      "municipality": "ÅS",
+      "county": "AKERSHUS",
+      "lon": 10.8104,
+      "lat": 59.6704
+    },
+    {
+      "id": "SN50810",
+      "name": "ÅSANE",
+      "municipality": "BERGEN",
+      "county": "VESTLAND",
+      "lon": 5.3418,
+      "lat": 60.4742
+    },
+    {
+      "id": "SN19510",
+      "name": "ØVREVOLL",
+      "municipality": "BÆRUM",
+      "county": "AKERSHUS",
+      "lon": 10.6227,
+      "lat": 59.94046
+    }
+  ]
+}

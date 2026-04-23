@@ -4,7 +4,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { Map, Table2 } from "lucide-react";
 
 // --- API --- //
-import { fetchPropertyByPoint, fetchPropertyByMatrikkel } from "../api/property";
+import { fetchPropertyByMatrikkel } from "../api/property";
 import { fetchTerrain } from "../api/terrain";
 import { fetchWeatherStations, fetchIvfData } from "../api/ivf";
 import type { IvfResponse, WeatherStation } from "../api/ivf";
@@ -32,7 +32,7 @@ export default function HomePage() {
     propertyBoundary, setPropertyBoundary,
     propertyAddress, setPropertyAddress,
     propertyMatrikkel, setPropertyMatrikkel,
-    clickedCoord, setClickedCoord,
+    clickedCoord,
     mouseCoord, setMouseCoord,
     propertyLoading, setPropertyLoading,
     propertyError, setPropertyError,
@@ -73,7 +73,6 @@ export default function HomePage() {
 
   // --- Refs ---
   const mapRef = useRef(null);
-  const singleClickTimer = useRef(null);
 
   // --- Effects ---
   useEffect(() => {
@@ -122,9 +121,11 @@ export default function HomePage() {
       setTerrainError("");
       return;
     }
+
     setPointB({ lat, lng });
     setTerrainLoading(true);
     setTerrainError("");
+
     fetchTerrain(pointA.lat, pointA.lng, lat, lng)
       .then((data) => {
         setLength(data.lengde_m);
@@ -140,71 +141,51 @@ export default function HomePage() {
       .finally(() => setTerrainLoading(false));
   }
 
-  function handleMapSingleClick(lat: number, lng: number) {
-    if (singleClickTimer.current) clearTimeout(singleClickTimer.current);
-    singleClickTimer.current = setTimeout(async () => {
-      setPropertyLoading(true);
-      setPropertyError("");
-      setPropertyBoundary(null);
-      setPropertyAddress(null);
-      setPropertyMatrikkel(null);
-      setClickedCoord({ lat, lng });
-      try {
-        const data = await fetchPropertyByPoint(lat, lng);
-        setPropertyAddress(data.adresse ?? null);
-        setPropertyBoundary(data.grense ?? null);
-        if (data.matrikkel) {
-          setPropertyMatrikkel(data.matrikkel);
-          setMunicipalityNumber(data.matrikkel.kommunenummer);
-          setCadastralNumber(String(data.matrikkel.gnr));
-          setPropertyNumber(String(data.matrikkel.bnr));
-        }
-        if (data.warnings?.length > 0) setPropertyError(data.warnings.join(" "));
-      } catch {
-        setPropertyError("Could not fetch property data.");
-      } finally {
-        setPropertyLoading(false);
-      }
-    }, 300);
-  }
-
   async function handleMatrikkelLookup() {
     if (!municipalityNumber || !cadastralNumber || !propertyNumber) return;
+
     setMatrikkelLoading(true);
     setPropertyError("");
     setPropertyBoundary(null);
     setPropertyAddress(null);
     setPropertyMatrikkel(null);
+
     try {
       const data = await fetchPropertyByMatrikkel(
         municipalityNumber,
         Number(cadastralNumber),
         Number(propertyNumber)
       );
+
       setPropertyAddress(data.adresse ?? null);
       setPropertyBoundary(data.polygon ?? null);
+
       setPropertyMatrikkel({
         gnr: data.gardsnummer,
         bnr: data.bruksnummer,
         kommunenummer: data.kommunenummer,
       });
+
       if (data.bounds && mapRef.current) {
         mapRef.current.fitBounds(
           [[data.bounds.south, data.bounds.west], [data.bounds.north, data.bounds.east]],
           { padding: [40, 40] }
         );
       }
-      if (data.warnings?.length > 0) setPropertyError(data.warnings.join(" "));
+
+      if (data.warnings?.length > 0) {
+        setPropertyError(data.warnings.join(" "));
+      }
     } catch (e) {
-      setPropertyError(e instanceof Error ? e.message : "Could not look up property.");
+      setPropertyError(
+        e instanceof Error ? e.message : "Could not look up property."
+      );
     } finally {
       setMatrikkelLoading(false);
     }
   }
 
-  function cancelSingleClick() {
-    if (singleClickTimer.current) clearTimeout(singleClickTimer.current);
-  }
+  function cancelSingleClick() {}
 
   function handleReset() {
     resetForm();
@@ -217,7 +198,9 @@ export default function HomePage() {
     mapRef,
     setMapLayer,
     projectName: form.projectName,
-    elevation, length, concentrationTime,
+    elevation,
+    length,
+    concentrationTime,
     area: form.area,
     returnPeriod: form.returnPeriod,
     climateFactor: form.climateFactor,
@@ -256,6 +239,7 @@ export default function HomePage() {
             propertyAddress={propertyAddress}
             propertyMatrikkel={propertyMatrikkel}
             propertyError={propertyError}
+            propertyLoading={propertyLoading}
             weatherStations={weatherStations}
             selectedStationId={selectedStationId}
             setSelectedStationId={setSelectedStationId}
@@ -319,11 +303,12 @@ export default function HomePage() {
                   mouseCoord={mouseCoord}
                   clickedCoord={clickedCoord}
                   onPick={handleMapPick}
-                  onSingleClick={handleMapSingleClick}
+                  onSingleClick={() => {}}
                   onCancelSingleClick={cancelSingleClick}
                   onMouseMove={(lat, lng) => setMouseCoord({ lat, lng })}
                 />
               )}
+
               {rightPanelView === "ivf" && (
                 <IvfPanel
                   ivfData={ivfData}
