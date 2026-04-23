@@ -41,7 +41,11 @@ function latLngToUtm33(lat: number, lng: number) {
 
 function MapClickHandler({ onPick, onSingleClick, onCancelSingleClick, onMouseMove }) {
   const map = useMapEvents({
-    click(e) { onSingleClick(e.latlng.lat, e.latlng.lng); },
+    click(e) {
+      // Ignorer klikk fra UI-elementer
+      if (e.originalEvent?.target?.closest?.(".leaflet-control-container")) return;
+      onSingleClick(e.latlng.lat, e.latlng.lng);
+    },
     dblclick(e) { onCancelSingleClick(); onPick(e.latlng.lat, e.latlng.lng); },
     mousemove(e) { onMouseMove(e.latlng.lat, e.latlng.lng); },
   });
@@ -50,8 +54,20 @@ function MapClickHandler({ onPick, onSingleClick, onCancelSingleClick, onMouseMo
 }
 
 function MapLayerToggle({ layer, onChange }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (ref.current) {
+      L.DomEvent.disableClickPropagation(ref.current);
+      L.DomEvent.disableScrollPropagation(ref.current);
+    }
+  }, []);
+
   return (
-    <div className="absolute right-3 top-1/2 z-[1000] flex -translate-y-1/2 flex-col gap-2 rounded-xl bg-white/35 p-2 backdrop-blur-sm dark:bg-slate-900/30">
+    <div
+      ref={ref}
+      className="absolute right-3 top-1/2 z-[1000] flex -translate-y-1/2 flex-col gap-2 rounded-xl bg-white/35 p-2 backdrop-blur-sm dark:bg-slate-900/30"
+    >
       <button type="button" onClick={() => onChange("kart")}
         className={`h-14 w-16 overflow-hidden rounded-lg border-2 shadow transition ${layer === "kart" ? "border-black ring-2 ring-white/90" : "border-gray-600 bg-white/85 opacity-90 hover:opacity-100"}`}
         title="Kart">
@@ -149,6 +165,16 @@ export default function PropertyMap({
 }: PropertyMapProps) {
   const utmSource = mouseCoord ?? clickedCoord;
 
+const [boundaryKey, setBoundaryKey] = useState<string | null>(null);
+
+useEffect(() => {
+  if (propertyBoundary) {
+    setBoundaryKey((prev) => prev ?? Date.now().toString());
+  } else {
+    setBoundaryKey(null);
+  }
+}, [propertyBoundary]);
+
   return (
     <div className="h-full w-full">
       <MapContainer
@@ -188,11 +214,11 @@ export default function PropertyMap({
           />
         )}
         {propertyBoundary?.features?.length > 0 && (
-          <GeoJSON
-            key={JSON.stringify(propertyBoundary)}
+        <GeoJSON
+            key={boundaryKey}
             data={propertyBoundary}
-            style={{ color: "#f59e0b", weight: 2, fillOpacity: 0.1, fillColor: "#f59e0b" }}
-          />
+            style={{ color: "#f59e0b", weight: 3, fillOpacity: 0.5, fillColor: "#f59e0b" }}
+        />
         )}
         {pointA?.lat != null && pointA?.lng != null && (
           <CircleMarker center={[pointA.lat, pointA.lng]} radius={7} />

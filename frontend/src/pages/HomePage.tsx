@@ -219,7 +219,9 @@ export default function HomePage({
     mapRef,
     setMapLayer,
     projectName: form.projectName,
-    elevation, length, concentrationTime,
+    elevation,
+    length,
+    concentrationTime,
     area: form.area,
     returnPeriod: form.returnPeriod,
     climateFactor: form.climateFactor,
@@ -258,6 +260,7 @@ export default function HomePage({
             propertyAddress={propertyAddress}
             propertyMatrikkel={propertyMatrikkel}
             propertyError={propertyError}
+            propertyLoading={propertyLoading}
             weatherStations={weatherStations}
             selectedStationId={selectedStationId}
             setSelectedStationId={setSelectedStationId}
@@ -279,6 +282,7 @@ export default function HomePage({
 
           <section className="order-1 flex h-full flex-col lg:order-2">
             <div className="relative flex-1">
+
               <div className="absolute left-16 top-3 z-[1000]">
                 <div className="flex overflow-hidden rounded-xl border border-slate-200 bg-white/95 shadow-lg backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
                   <button
@@ -310,7 +314,7 @@ export default function HomePage({
                 </div>
               </div>
 
-              {rightPanelView === "map" && (
+              <div className={rightPanelView === "map" ? "h-full w-full" : "hidden"}>
                 <PropertyMap
                   mapRef={mapRef}
                   mapLayer={mapLayer}
@@ -325,15 +329,17 @@ export default function HomePage({
                   onCancelSingleClick={cancelSingleClick}
                   onMouseMove={(lat, lng) => setMouseCoord({ lat, lng })}
                 />
-              )}
-              {rightPanelView === "ivf" && (
+              </div>
+
+              <div className={rightPanelView === "ivf" ? "h-full w-full" : "hidden"}>
                 <IvfPanel
                   ivfData={ivfData}
                   ivfLoading={ivfLoading}
                   ivfError={ivfError}
                   selectedStation={selectedStation}
                 />
-              )}
+              </div>
+
             </div>
           </section>
 

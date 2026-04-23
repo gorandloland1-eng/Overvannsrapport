@@ -70,10 +70,6 @@ export default function PropertySection({
         {loading ? "Looking up..." : "Look up property"}
       </button>
 
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-        Or click the map to auto-fill
-      </p>
-
       {(address || matrikkel) && !propertyLoading && (
         <div className="mt-3 rounded-xl border border-slate-200 bg-white/60 p-3 dark:border-slate-700 dark:bg-slate-800/60">
           <div className="mb-1 text-xs text-slate-500 dark:text-slate-400">
