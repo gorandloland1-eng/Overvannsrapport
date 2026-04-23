@@ -4,7 +4,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { Map, Table2 } from "lucide-react";
 
 // --- API --- //
-import { fetchPropertyByPoint, fetchPropertyByMatrikkel } from "../api/property";
+import { fetchPropertyByMatrikkel } from "../api/property";
 import { fetchTerrain } from "../api/terrain";
 import { fetchWeatherStations, fetchIvfData } from "../api/ivf";
 import type { IvfResponse, WeatherStation } from "../api/ivf";
@@ -35,28 +35,46 @@ export default function HomePage({
   const { pdfSaving, pdfError, handleGeneratePdf } = useGeneratePdf();
 
   const {
-    propertyBoundary, setPropertyBoundary,
-    propertyAddress, setPropertyAddress,
-    propertyMatrikkel, setPropertyMatrikkel,
-    clickedCoord, setClickedCoord,
-    mouseCoord, setMouseCoord,
-    propertyLoading, setPropertyLoading,
-    propertyError, setPropertyError,
-    municipalityNumber, setMunicipalityNumber,
-    cadastralNumber, setCadastralNumber,
-    propertyNumber, setPropertyNumber,
-    matrikkelLoading, setMatrikkelLoading,
+    propertyBoundary,
+    setPropertyBoundary,
+    propertyAddress,
+    setPropertyAddress,
+    propertyMatrikkel,
+    setPropertyMatrikkel,
+    clickedCoord,
+    setClickedCoord,
+    mouseCoord,
+    setMouseCoord,
+    propertyLoading,
+    setPropertyLoading,
+    propertyError,
+    setPropertyError,
+    municipalityNumber,
+    setMunicipalityNumber,
+    cadastralNumber,
+    setCadastralNumber,
+    propertyNumber,
+    setPropertyNumber,
+    matrikkelLoading,
+    setMatrikkelLoading,
     resetProperty,
   } = usePropertyState();
 
   const {
-    pointA, setPointA,
-    pointB, setPointB,
-    elevation, setElevation,
-    length, setLength,
-    concentrationTime, setConcentrationTime,
-    terrainLoading, setTerrainLoading,
-    terrainError, setTerrainError,
+    pointA,
+    setPointA,
+    pointB,
+    setPointB,
+    elevation,
+    setElevation,
+    length,
+    setLength,
+    concentrationTime,
+    setConcentrationTime,
+    terrainLoading,
+    setTerrainLoading,
+    terrainError,
+    setTerrainError,
     resetTerrain,
   } = useTerrainState();
 
@@ -78,10 +96,8 @@ export default function HomePage({
 
   // --- Refs ---
   const mapRef = useRef(null);
-  const singleClickTimer = useRef(null);
 
   // --- Effects ---
-
   useEffect(() => {
     fetchWeatherStations()
       .then((data) => {
@@ -124,9 +140,11 @@ export default function HomePage({
       setTerrainError("");
       return;
     }
+
     setPointB({ lat, lng });
     setTerrainLoading(true);
     setTerrainError("");
+
     fetchTerrain(pointA.lat, pointA.lng, lat, lng)
       .then((data) => {
         setLength(data.lengde_m);
@@ -142,47 +160,22 @@ export default function HomePage({
       .finally(() => setTerrainLoading(false));
   }
 
-  function handleMapSingleClick(lat: number, lng: number) {
-    if (singleClickTimer.current) clearTimeout(singleClickTimer.current);
-    singleClickTimer.current = setTimeout(async () => {
-      setPropertyLoading(true);
-      setPropertyError("");
-      setPropertyBoundary(null);
-      setPropertyAddress(null);
-      setPropertyMatrikkel(null);
-      setClickedCoord({ lat, lng });
-      try {
-        const data = await fetchPropertyByPoint(lat, lng);
-        setPropertyAddress(data.adresse ?? null);
-        setPropertyBoundary(data.grense ?? null);
-        if (data.matrikkel) {
-          setPropertyMatrikkel(data.matrikkel);
-          setMunicipalityNumber(data.matrikkel.kommunenummer);
-          setCadastralNumber(String(data.matrikkel.gnr));
-          setPropertyNumber(String(data.matrikkel.bnr));
-        }
-        if (data.warnings?.length > 0) setPropertyError(data.warnings.join(" "));
-      } catch {
-        setPropertyError("Could not fetch property data.");
-      } finally {
-        setPropertyLoading(false);
-      }
-    }, 300);
-  }
-
   async function handleMatrikkelLookup() {
     if (!municipalityNumber || !cadastralNumber || !propertyNumber) return;
+
     setMatrikkelLoading(true);
     setPropertyError("");
     setPropertyBoundary(null);
     setPropertyAddress(null);
     setPropertyMatrikkel(null);
+
     try {
       const data = await fetchPropertyByMatrikkel(
         municipalityNumber,
         Number(cadastralNumber),
         Number(propertyNumber)
       );
+
       setPropertyAddress(data.adresse ?? null);
       setPropertyBoundary(data.polygon ?? null);
       setPropertyMatrikkel({
@@ -190,22 +183,27 @@ export default function HomePage({
         bnr: data.bruksnummer,
         kommunenummer: data.kommunenummer,
       });
+
       if (data.bounds && mapRef.current) {
         mapRef.current.fitBounds(
-          [[data.bounds.south, data.bounds.west], [data.bounds.north, data.bounds.east]],
+          [
+            [data.bounds.south, data.bounds.west],
+            [data.bounds.north, data.bounds.east],
+          ],
           { padding: [40, 40] }
         );
       }
-      if (data.warnings?.length > 0) setPropertyError(data.warnings.join(" "));
+
+      if (data.warnings?.length > 0) {
+        setPropertyError(data.warnings.join(" "));
+      }
     } catch (e) {
-      setPropertyError(e instanceof Error ? e.message : "Could not look up property.");
+      setPropertyError(
+        e instanceof Error ? e.message : "Could not look up property."
+      );
     } finally {
       setMatrikkelLoading(false);
     }
-  }
-
-  function cancelSingleClick() {
-    if (singleClickTimer.current) clearTimeout(singleClickTimer.current);
   }
 
   function handleReset() {
@@ -245,7 +243,6 @@ export default function HomePage({
 
       <main className="h-[calc(100dvh-4rem)]">
         <div className="grid h-full grid-cols-1 overflow-hidden lg:grid-cols-[320px_1fr]">
-
           <Sidebar
             form={form}
             setField={setField}
@@ -282,7 +279,6 @@ export default function HomePage({
 
           <section className="order-1 flex h-full flex-col lg:order-2">
             <div className="relative flex-1">
-
               <div className="absolute left-16 top-3 z-[1000]">
                 <div className="flex overflow-hidden rounded-xl border border-slate-200 bg-white/95 shadow-lg backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
                   <button
@@ -298,6 +294,7 @@ export default function HomePage({
                   >
                     <Map size={18} />
                   </button>
+
                   <button
                     type="button"
                     onClick={() => setRightPanelView("ivf")}
@@ -325,8 +322,8 @@ export default function HomePage({
                   mouseCoord={mouseCoord}
                   clickedCoord={clickedCoord}
                   onPick={handleMapPick}
-                  onSingleClick={handleMapSingleClick}
-                  onCancelSingleClick={cancelSingleClick}
+                  onSingleClick={() => {}}
+                  onCancelSingleClick={() => {}}
                   onMouseMove={(lat, lng) => setMouseCoord({ lat, lng })}
                 />
               </div>
@@ -339,10 +336,8 @@ export default function HomePage({
                   selectedStation={selectedStation}
                 />
               </div>
-
             </div>
           </section>
-
         </div>
       </main>
     </div>
