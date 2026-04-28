@@ -34,7 +34,7 @@ export default function MapScale() {
   return (
     <div
       ref={ref}
-      className="absolute bottom-3 left-1/2 z-1000 flex select-none items-center gap-3 rounded-lg border border-white/40 bg-white/80 px-3 py-1.5 shadow backdrop-blur-sm"
+      className="absolute bottom-3 left-1/2 z-[1000] flex select-none items-center gap-3 rounded-lg border border-white/40 bg-white/80 px-3 py-1.5 shadow backdrop-blur-sm"
       style={{ transform: "translateX(-50%)" }}
     >
       <div className="flex flex-col items-center gap-0.5">
