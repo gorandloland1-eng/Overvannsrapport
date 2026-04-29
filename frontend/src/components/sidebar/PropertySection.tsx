@@ -100,61 +100,60 @@ export default function PropertySection({
         Property ID
       </label>
 
-      {/* Guided single input */}
-      {step !== "done" && (
-        <div className="relative">
-          <input
-            ref={inputRef}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={meta.placeholder}
-            maxLength={meta.maxLength}
-            type={meta.type ?? "text"}
-            autoFocus
-            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 pr-24 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
-          />
-          {inputValue.trim() && (
-            <button
-              type="button"
-              onClick={() => confirm(inputValue)}
-              tabIndex={-1}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
-            >
-              Neste →
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Chips row */}
-      <div className="mt-2 flex items-center gap-2">
-        {chips.map((chip) => (
-          <div
-            key={chip.id}
-            className={[
-              "flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium transition-all",
-              chip.value
-                ? "border-[#213F53] bg-[#213F53]/10 text-[#213F53] dark:border-[#4a90b8] dark:bg-[#213F53]/20 dark:text-[#4a90b8]"
-                : "border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-500",
-            ].join(" ")}
-          >
-            <span className="opacity-60">{chip.label}:</span>
-            <span>{chip.value || "—"}</span>
-          </div>
-        ))}
-
-        {/* Reset button — only shown once at least one chip is filled */}
-        {(municipalityNumber || cadastralNumber || propertyNumber) && (
+    {/* Guided single input */}
+    {step !== "done" && (
+      <div className="relative mb-3">
+        <input
+          ref={inputRef}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={meta.placeholder}
+          maxLength={meta.maxLength}
+          type={meta.type ?? "text"}
+          autoFocus
+          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 pr-24 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
+        />
+        {inputValue.trim() && (
           <button
             type="button"
-            onClick={handleReset}
-            className="ml-auto rounded-lg px-2 py-1 text-xs text-slate-400 transition hover:text-slate-600 dark:hover:text-slate-200"
+            onClick={() => confirm(inputValue)}
+            tabIndex={-1}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
           >
-            Nullstill
+            Neste →
           </button>
         )}
       </div>
+    )}
+
+    {/* Chips row */}
+    <div className="mb-3 mt-2 flex items-center gap-2">
+      {chips.map((chip) => (
+        <div
+          key={chip.id}
+          className={[
+            "flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium transition-all",
+            chip.value
+              ? "border-[#213F53] bg-[#213F53]/10 text-[#213F53] dark:border-[#4a90b8] dark:bg-[#213F53]/20 dark:text-[#4a90b8]"
+              : "border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-500",
+          ].join(" ")}
+        >
+          <span className="opacity-60">{chip.label}:</span>
+          <span>{chip.value || "—"}</span>
+        </div>
+      ))}
+
+      {(municipalityNumber || cadastralNumber || propertyNumber) && (
+        <button
+          type="button"
+          onClick={handleReset}
+          className="ml-auto rounded-lg px-2 py-1 text-xs text-slate-400 transition hover:text-slate-600 dark:hover:text-slate-200"
+        >
+          Nullstill
+        </button>
+      )}
+    </div>
 
       {/* Lookup button — only when all three are filled */}
       {step === "done" && (
