@@ -19,7 +19,7 @@ export default function Header({ darkMode, onToggleDarkMode }: HeaderProps) {
   const buttonRef = useRef(null);
 
   return (
-    <header className="sticky top-0 z-[9999] w-full bg-[#213F53] dark:bg-slate-950">
+    <header className="sticky top-0 z-[9999] w-full bg-[#213F53] shadow-sm dark:border-b dark:border-slate-700 dark:bg-slate-950 dark:shadow-[0_1px_0_0_rgba(148,163,184,0.18)]">
       <div className="flex h-16 w-full items-center justify-between px-5">
         <Link to="/" className="flex items-center gap-3">
           <img src={logo} alt="Trygt Overvann logo" className="h-10 w-auto cursor-pointer object-contain" />

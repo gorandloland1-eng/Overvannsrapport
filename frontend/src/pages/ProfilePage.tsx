@@ -184,7 +184,7 @@ export default function ProfilePage({
 
   return (
     <div className="min-h-dvh w-full bg-[#F6F8FF] dark:bg-slate-950">
-      <header className="sticky top-0 z-[9999] w-full bg-[#213F53] dark:bg-slate-950">
+      <header className="sticky top-0 z-[9999] w-full bg-[#213F53] dark:border-b dark:border-slate-700 dark:bg-slate-950">
         <div className="flex h-16 w-full items-center justify-between px-5">
           <Link to="/" className="flex items-center gap-3">
             <img
