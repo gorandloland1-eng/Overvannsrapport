@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebase";
@@ -17,6 +17,21 @@ export default function Header({ darkMode, onToggleDarkMode }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
   const buttonRef = useRef(null);
+
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (!menuOpen) return;
+
+      const target = e.target as Node;
+      const clickedMenu = menuRef.current?.contains(target);
+      const clickedButton = buttonRef.current?.contains(target);
+
+      if (!clickedMenu && !clickedButton) setMenuOpen(false);
+    }
+
+    window.addEventListener("mousedown", onDown);
+    return () => window.removeEventListener("mousedown", onDown);
+  }, [menuOpen]);
 
   return (
     <header className="sticky top-0 z-[9999] w-full bg-[#213F53] shadow-sm dark:border-b dark:border-slate-700 dark:bg-slate-950 dark:shadow-[0_1px_0_0_rgba(148,163,184,0.18)]">
