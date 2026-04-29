@@ -165,7 +165,7 @@ export default function CalculationSection({
           type="button"
           onClick={onGenerate}
           disabled={loading}
-          className="h-14 w-full rounded-[16px] bg-slate-300 text-base font-semibold text-black transition hover:bg-slate-400 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600"
+          className="h-14 w-full rounded-[16px] bg-[#213F53] text-base font-semibold text-white transition hover:bg-[#1a3244] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? "Genererer PDF..." : "Generer PDF"}
         </button>
