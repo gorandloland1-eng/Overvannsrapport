@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 import requests
 import os
 import time
 import json
 import threading
+import math
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -30,7 +31,7 @@ REQUIRED_SHORT_DURATIONS = {1, 2, 3, 5}
 CACHE_DIR = Path("cache")
 CACHE_DIR.mkdir(exist_ok=True)
 STATIONS_CACHE_FILE = CACHE_DIR / "filtered_weather_stations.json"
-CACHE_MAX_AGE_SECONDS = 60 * 60 * 24  # 24 timer
+CACHE_MAX_AGE_SECONDS = 60 * 60 * 24
 
 _cache_lock = threading.Lock()
 _cache_building = False
@@ -38,6 +39,23 @@ _cache_building = False
 
 def mm_to_lsha(mm: float, dur_min: int) -> float:
     return round(mm / (dur_min * 0.006), 1)
+
+
+def haversine_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    radius = 6371.0
+
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+
+    a = (
+        math.sin(delta_phi / 2) ** 2
+        + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2) ** 2
+    )
+
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return radius * c
 
 
 def extract_station_sources(payload: dict):
@@ -80,6 +98,7 @@ def fetch_all_raw_stations() -> list[dict]:
         if r.status_code == 200:
             for s in r.json().get("data", []):
                 sid = s["id"]
+
                 if sid not in results:
                     geom = s.get("geometry", {})
                     coords = geom.get("coordinates", [None, None]) if geom else [None, None]
@@ -118,10 +137,6 @@ def get_station_idf_data(station_id: str):
 
 
 def is_stable_station(station_id: str) -> bool:
-    """
-    Filtrerer bort stasjoner som typisk bare har grove serier,
-    f.eks. 10, 15, 20 min og mangler korte varigheter som 1, 2, 3, 5 min.
-    """
     station_data = get_station_idf_data(station_id)
     if not station_data:
         return False
@@ -164,6 +179,7 @@ def load_cached_filtered_stations():
             "cached_at": cached_at,
             "is_fresh": is_fresh,
         }
+
     except Exception as e:
         print(f"Kunne ikke lese cache-fil: {e}")
         return None
@@ -195,6 +211,7 @@ def build_filtered_stations_cache():
 
         for idx, station in enumerate(all_stations, start=1):
             sid = station["id"]
+
             try:
                 if is_stable_station(sid):
                     filtered_stations.append(station)
@@ -211,6 +228,7 @@ def build_filtered_stations_cache():
             f"Ferdig med cache: {len(all_stations)} totalt, "
             f"{len(filtered_stations)} stabile stasjoner lagret"
         )
+
     finally:
         with _cache_lock:
             _cache_building = False
@@ -230,7 +248,6 @@ def ensure_cache_in_background():
     threading.Thread(target=build_filtered_stations_cache, daemon=True).start()
 
 
-# --- All weather stations --- #
 @router.get("/stations")
 def get_stations():
     cached = load_cached_filtered_stations()
@@ -242,7 +259,6 @@ def get_stations():
         print(f"Stations: returnerer cache ({len(cached['stations'])} stasjoner)")
         return cached["stations"]
 
-    # Hvis ingen cache finnes ennå, bygg synkront første gang
     print("Ingen cache funnet. Bygger filtrert stasjonsliste nå ...")
     build_filtered_stations_cache()
 
@@ -255,10 +271,56 @@ def get_stations():
     return []
 
 
-# --- Valgfri debug-endpoint --- #
+@router.get("/stations/nearest")
+def get_nearest_station(
+    lat: float = Query(...),
+    lon: float = Query(...),
+):
+    cached = load_cached_filtered_stations()
+
+    if not cached or not cached["stations"]:
+        print("Ingen cache funnet ved nearest. Bygger cache ...")
+        build_filtered_stations_cache()
+        cached = load_cached_filtered_stations()
+
+    if not cached or not cached["stations"]:
+        raise HTTPException(status_code=404, detail="Fant ingen værstasjoner")
+
+    valid_stations = [
+        station for station in cached["stations"]
+        if station.get("lat") is not None and station.get("lon") is not None
+    ]
+
+    if not valid_stations:
+        raise HTTPException(status_code=404, detail="Ingen værstasjoner har koordinater")
+
+    nearest = min(
+        valid_stations,
+        key=lambda station: haversine_distance_km(
+            lat,
+            lon,
+            float(station["lat"]),
+            float(station["lon"]),
+        ),
+    )
+
+    distance_km = haversine_distance_km(
+        lat,
+        lon,
+        float(nearest["lat"]),
+        float(nearest["lon"]),
+    )
+
+    return {
+        **nearest,
+        "distance_km": round(distance_km, 2),
+    }
+
+
 @router.get("/stations/debug")
 def get_stations_debug():
     cached = load_cached_filtered_stations()
+
     return {
         "cache_exists": bool(cached),
         "cache_fresh": cached["is_fresh"] if cached else False,
@@ -268,15 +330,14 @@ def get_stations_debug():
     }
 
 
-# --- Weather station info fields for table --- #
 @router.get("/ivf/{station_id}")
 def get_ivf(station_id: str):
-    # 1. Hent stasjonsnavn fra Frost
     sr = SESSION.get(
         f"{FROST_BASE}/sources/v0.jsonld",
         params={"ids": station_id, "fields": "id,name,geometry"},
         timeout=15,
     )
+
     if sr.status_code != 200 or not sr.json().get("data"):
         raise HTTPException(status_code=404, detail=f"Fant ikke stasjon {station_id}")
 
@@ -284,10 +345,10 @@ def get_ivf(station_id: str):
     station_name = src.get("name", station_id)
     geom = src.get("geometry", {})
     coords = geom.get("coordinates", []) if geom else []
+
     lon = coords[0] if len(coords) >= 2 else None
     lat = coords[1] if len(coords) >= 2 else None
 
-    # 2. Hent per-station IDF — fjern "SN"-prefix for frost-rc
     numeric_id = station_id.upper().replace("SN", "")
 
     r_mm = SESSION.get(
@@ -308,19 +369,21 @@ def get_ivf(station_id: str):
         if lon is None:
             raise HTTPException(
                 status_code=404,
-                detail="Ingen IVF-data og ingen koordinater for stasjon"
+                detail="Ingen IVF-data og ingen koordinater for stasjon",
             )
 
         print(f"  {station_id}: fallback til grid ({lon}, {lat})")
+
         r_g = SESSION.get(
             IDF_GRID,
             params={"location": f"POINT({lon} {lat})", "unit": "mm"},
             timeout=30,
         )
+
         if r_g.status_code != 200:
             raise HTTPException(
                 status_code=502,
-                detail="Ingen IVF-data tilgjengelig for denne stasjonen"
+                detail="Ingen IVF-data tilgjengelig for denne stasjonen",
             )
 
         grid_json = r_g.json()
@@ -335,13 +398,14 @@ def get_ivf(station_id: str):
         mm_vals = station_data.get("values", [])
         to_time = station_data.get("toTime", "")
         from_time = station_data.get("fromTime", "")
+
         last_year = int(to_time[:4]) if to_time else None
         first_year = int(from_time[:4]) if from_time else None
         n_seasons = station_data.get("numberOfSeasons", 0)
         source_type = "station"
+
         print(f"  {station_id}: {n_seasons} sesonger, {len(mm_vals)} verdier")
 
-    # 3. Bygg tabeller — konverter mm til lsha
     ls_ha: dict[str, dict[str, float]] = {}
     mm_out: dict[str, dict[str, float]] = {}
 
@@ -349,6 +413,7 @@ def get_ivf(station_id: str):
         dur = str(v["duration"])
         T = str(v["frequency"])
         mm_val = v["intensity"]
+
         mm_out.setdefault(dur, {})[T] = round(mm_val, 1)
         ls_ha.setdefault(dur, {})[T] = mm_to_lsha(mm_val, int(dur))
 
