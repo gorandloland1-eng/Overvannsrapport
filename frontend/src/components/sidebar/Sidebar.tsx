@@ -42,7 +42,9 @@ export default function Sidebar(props) {
         />
 
         <TerrainSection
-          elevation={props.elevation}
+          elev1={props.elev1}
+          elev2={props.elev2}
+          heightDifference={props.heightDifference}
           length={props.length}
           concentrationTime={props.concentrationTime}
           loading={props.terrainLoading}

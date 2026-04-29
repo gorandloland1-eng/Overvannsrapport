@@ -74,12 +74,19 @@ export default function HomePage({
     setPointA,
     pointB,
     setPointB,
-    elevation,
-    setElevation,
+
+    elev1,
+    setElev1,
+    elev2,
+    setElev2,
+    heightDifference,
+    setHeightDifference,
+
     length,
     setLength,
     concentrationTime,
     setConcentrationTime,
+
     terrainLoading,
     setTerrainLoading,
     terrainError,
@@ -156,17 +163,10 @@ export default function HomePage({
   // Handlers
   // ---------------------------------------------------------------------------
 
-  function resetTerrainPoints() {
-    setPointA(null);
-    setPointB(null);
-    setElevation(null);
-    setLength(null);
-    setConcentrationTime(null);
-    setTerrainError("");
-  }
-
-  function resetTerrainResult() {
-    setElevation(null);
+  function clearTerrainResult() {
+    setElev1(null);
+    setElev2(null);
+    setHeightDifference(null);
     setLength(null);
     setConcentrationTime(null);
     setTerrainError("");
@@ -176,7 +176,8 @@ export default function HomePage({
     if (!pointA || pointB) {
       setPointA({ lat, lng });
       setPointB(null);
-      resetTerrainResult();
+      clearTerrainResult();
+
       return;
     }
 
@@ -186,15 +187,15 @@ export default function HomePage({
 
     fetchTerrain(pointA.lat, pointA.lng, lat, lng)
       .then((data) => {
+        setElev1(data.elev1);
+        setElev2(data.elev2);
+        setHeightDifference(data.hoydeforskjell_m);
         setLength(data.lengde_m);
-        setElevation(data.hoydeforskjell_m);
         setConcentrationTime(data.konsentrasjonstid_ivf_min);
       })
       .catch((error) => {
         setTerrainError(error.message);
-        setLength(null);
-        setElevation(null);
-        setConcentrationTime(null);
+        clearTerrainResult();
       })
       .finally(() => setTerrainLoading(false));
   }
@@ -264,9 +265,17 @@ export default function HomePage({
     mapRef,
     setMapLayer,
     projectName: form.projectName,
-    elevation,
+
+    elev1,
+    elev2,
+
+    // Compatibility with old PDF hook naming.
+    elevation: heightDifference,
+
+    heightDifference,
     length,
     concentrationTime,
+
     area: form.area,
     returnPeriod: form.returnPeriod,
     climateFactor: form.climateFactor,
@@ -286,6 +295,7 @@ export default function HomePage({
   const sidebarProps = {
     form,
     setField,
+
     municipalityNumber,
     cadastralNumber,
     propertyNumber,
@@ -298,6 +308,7 @@ export default function HomePage({
     propertyMatrikkel,
     propertyError,
     propertyLoading,
+
     weatherStations,
     selectedStationId,
     setSelectedStationId,
@@ -305,12 +316,17 @@ export default function HomePage({
     setStationSearch,
     stationDropdownOpen,
     setStationDropdownOpen,
-    elevation,
+
+    elev1,
+    elev2,
+    heightDifference,
     length,
     concentrationTime,
     terrainLoading,
     terrainError,
+
     soilTypes,
+
     handleGeneratePdf: () => handleGeneratePdf(pdfOptions),
     pdfSaving,
     pdfError,
@@ -453,11 +469,13 @@ export default function HomePage({
         <div className="flex h-full min-h-0 flex-col xl:hidden">
           <div className="flex shrink-0 border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
             <MobileTabButton tab="map" icon={<Map size={15} />} label="Kart" />
+
             <MobileTabButton
               tab="ivf"
               icon={<Table2 size={15} />}
               label="IVF"
             />
+
             <MobileTabButton
               tab="sidebar"
               icon={<SlidersHorizontal size={15} />}
