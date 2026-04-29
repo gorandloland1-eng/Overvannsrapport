@@ -10,13 +10,14 @@ type Props = {
   onLookup: () => void;
   loading: boolean;
   address: string | null;
-  matrikkel: {
-    gnr: number;
-    bnr: number;
-    kommunenummer: string;
-  } | null;
+  matrikkel: { gnr: number; bnr: number; kommunenummer: string } | null;
   error: string;
   propertyLoading: boolean;
+  validationErrors?: {
+    municipalityNumber?: string;
+    cadastralNumber?: string;
+    propertyNumber?: string;
+  };
 };
 
 type Step = "knr" | "gnr" | "bnr" | "done";
@@ -28,34 +29,16 @@ type StepMeta = {
 };
 
 const STEP_META: Record<Step, StepMeta> = {
-  knr: {
-    placeholder: "Kommunenummer",
-    label: "Kommunenr.",
-    maxLength: 4,
-  },
-  gnr: {
-    placeholder: "Gårdsnummer",
-    label: "Gårdsnr.",
-  },
-  bnr: {
-    placeholder: "Bruksnummer",
-    label: "Bruksnr.",
-  },
-  done: {
-    placeholder: "",
-    label: "",
-  },
+  knr: { placeholder: "Kommunenummer", label: "Kommunenr.", maxLength: 4 },
+  gnr: { placeholder: "Gårdsnummer",   label: "Gårdsnr." },
+  bnr: { placeholder: "Bruksnummer",   label: "Bruksnr." },
+  done: { placeholder: "", label: "" },
 };
 
-function getStep(
-  municipalityNumber: string,
-  cadastralNumber: string,
-  propertyNumber: string
-): Step {
-  if (!municipalityNumber) return "knr";
-  if (!cadastralNumber) return "gnr";
-  if (!propertyNumber) return "bnr";
-
+function getStep(knr: string, gnr: string, bnr: string): Step {
+  if (!knr) return "knr";
+  if (!gnr) return "gnr";
+  if (!bnr) return "bnr";
   return "done";
 }
 
@@ -72,58 +55,45 @@ export default function PropertySection({
   matrikkel,
   error,
   propertyLoading,
+  validationErrors = {},
 }: Props) {
   const step = getStep(municipalityNumber, cadastralNumber, propertyNumber);
   const meta = STEP_META[step];
-
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputValue, setInputValue] = useState("");
 
+  // Which validation error applies to the current step's field
+  const currentStepError =
+    step === "knr" ? validationErrors.municipalityNumber
+    : step === "gnr" ? validationErrors.cadastralNumber
+    : step === "bnr" ? validationErrors.propertyNumber
+    : undefined;
+
   const chips = [
-    { id: "knr", value: municipalityNumber, label: "Knr" },
-    { id: "gnr", value: cadastralNumber, label: "Gnr" },
-    { id: "bnr", value: propertyNumber, label: "Bnr" },
+    { id: "knr", value: municipalityNumber, label: "Knr", fieldError: validationErrors.municipalityNumber },
+    { id: "gnr", value: cadastralNumber,    label: "Gnr", fieldError: validationErrors.cadastralNumber },
+    { id: "bnr", value: propertyNumber,     label: "Bnr", fieldError: validationErrors.propertyNumber },
   ];
 
   useEffect(() => {
     setInputValue("");
-
-    if (step !== "done") {
-      inputRef.current?.focus();
-    }
+    if (step !== "done") inputRef.current?.focus();
   }, [step]);
 
   function handleInputChange(value: string) {
-    const onlyDigits = value.replace(/\D/g, "");
-
-    setInputValue(onlyDigits);
+    setInputValue(value.replace(/\D/g, ""));
   }
 
   function confirm(value: string) {
-    const trimmedValue = value.trim();
-
-    if (!trimmedValue) return;
-
-    if (step === "knr") {
-      setMunicipalityNumber(trimmedValue);
-      return;
-    }
-
-    if (step === "gnr") {
-      setCadastralNumber(trimmedValue);
-      return;
-    }
-
-    if (step === "bnr") {
-      setPropertyNumber(trimmedValue);
-    }
+    const v = value.trim();
+    if (!v) return;
+    if (step === "knr") setMunicipalityNumber(v);
+    else if (step === "gnr") setCadastralNumber(v);
+    else if (step === "bnr") setPropertyNumber(v);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key !== "Enter") return;
-    if (!inputValue.trim()) return;
-
-    confirm(inputValue);
+    if (e.key === "Enter" && inputValue.trim()) confirm(inputValue);
   }
 
   function handleReset() {
@@ -151,9 +121,12 @@ export default function PropertySection({
             inputMode="numeric"
             pattern="[0-9]*"
             autoFocus
-            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 pr-24 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
+            className={`h-10 w-full rounded-xl border bg-white px-3 pr-24 text-sm outline-none focus:ring-4 dark:bg-slate-900 dark:text-slate-100 ${
+              currentStepError
+                ? "border-red-400 focus:border-red-400 focus:ring-red-100 dark:border-red-500 dark:focus:ring-red-900/30"
+                : "border-slate-200 focus:border-slate-300 focus:ring-slate-200 dark:border-slate-700 dark:focus:ring-slate-700"
+            }`}
           />
-
           {inputValue.trim() && (
             <button
               type="button"
@@ -167,13 +140,16 @@ export default function PropertySection({
         </div>
       )}
 
+      {/* Chips */}
       <div className="mb-3 mt-2 flex items-center gap-2">
         {chips.map((chip) => (
           <div
             key={chip.id}
             className={[
               "flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium transition-all",
-              chip.value
+              chip.fieldError && !chip.value
+                ? "border-red-400 bg-red-50 text-red-500 dark:border-red-500 dark:bg-red-900/20 dark:text-red-400"
+                : chip.value
                 ? "border-[#213F53] bg-[#213F53]/10 text-[#213F53] dark:border-[#4a90b8] dark:bg-[#213F53]/20 dark:text-[#4a90b8]"
                 : "border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-500",
             ].join(" ")}
@@ -194,6 +170,11 @@ export default function PropertySection({
         )}
       </div>
 
+      {/* Current step error message */}
+      {currentStepError && (
+        <p className="mb-2 text-xs text-red-500 dark:text-red-400">{currentStepError}</p>
+      )}
+
       {step === "done" && (
         <button
           type="button"
@@ -207,36 +188,15 @@ export default function PropertySection({
 
       {(address || matrikkel) && !propertyLoading && (
         <div className="mt-3 rounded-xl border border-slate-200 bg-white/60 p-3 dark:border-slate-700 dark:bg-slate-800/60">
-          <div className="mb-1 text-xs text-slate-500 dark:text-slate-400">
-            Nærmeste adresse
-          </div>
-
+          <div className="mb-1 text-xs text-slate-500 dark:text-slate-400">Nærmeste adresse</div>
           <div className="text-sm font-medium text-slate-800 dark:text-slate-100">
             {address ?? "Ingen adresse funnet"}
           </div>
-
           {matrikkel && (
             <div className="mt-2 flex gap-3 text-xs text-slate-500 dark:text-slate-400">
-              <span>
-                Knr:{" "}
-                <span className="font-semibold text-slate-700 dark:text-slate-200">
-                  {matrikkel.kommunenummer}
-                </span>
-              </span>
-
-              <span>
-                Gnr:{" "}
-                <span className="font-semibold text-slate-700 dark:text-slate-200">
-                  {matrikkel.gnr}
-                </span>
-              </span>
-
-              <span>
-                Bnr:{" "}
-                <span className="font-semibold text-slate-700 dark:text-slate-200">
-                  {matrikkel.bnr}
-                </span>
-              </span>
+              <span>Knr: <span className="font-semibold text-slate-700 dark:text-slate-200">{matrikkel.kommunenummer}</span></span>
+              <span>Gnr: <span className="font-semibold text-slate-700 dark:text-slate-200">{matrikkel.gnr}</span></span>
+              <span>Bnr: <span className="font-semibold text-slate-700 dark:text-slate-200">{matrikkel.bnr}</span></span>
             </div>
           )}
         </div>
@@ -245,11 +205,8 @@ export default function PropertySection({
       {propertyLoading && (
         <p className="mt-2 text-xs text-slate-400">Henter eiendomsdata...</p>
       )}
-
       {error && !propertyLoading && (
-        <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
-          {error}
-        </p>
+        <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">{error}</p>
       )}
     </section>
   );
