@@ -49,7 +49,7 @@ const MAP_LAYER_LABELS: Record<string, string> = {
   satellitt: "Satellitt",
 };
 
-// ── Shared icon components ────────────────────────────────────────────────────
+// ── Icons ─────────────────────────────────────────────────────────────────────
 
 function PdfIcon() {
   return (
@@ -106,18 +106,10 @@ function FileRow({
         <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{label}</span>
       </div>
       <div className="flex items-center gap-4">
-        <button
-          onClick={onPreview}
-          className="text-slate-400 transition hover:text-[#213F53] dark:hover:text-white"
-          title="Forhåndsvis"
-        >
+        <button onClick={onPreview} className="text-slate-400 transition hover:text-[#213F53] dark:hover:text-white" title="Forhåndsvis">
           <EyeIcon />
         </button>
-        <button
-          onClick={onDownload}
-          className="text-slate-400 transition hover:text-[#213F53] dark:hover:text-white"
-          title="Last ned"
-        >
+        <button onClick={onDownload} className="text-slate-400 transition hover:text-[#213F53] dark:hover:text-white" title="Last ned">
           <DownloadIcon />
         </button>
       </div>
@@ -191,48 +183,48 @@ export default function FilesPage({
   }
 
   async function downloadPdf(url: string, label: string) {
-  try {
-    const encodedUrl = encodeURIComponent(url);
-    const encodedFilename = encodeURIComponent(`${label || "rapport"}.pdf`);
-    const response = await fetch(
-      `http://localhost:8000/pdf/download-from-url?url=${encodedUrl}&filename=${encodedFilename}`
-    );
-    const blob = await response.blob();
-    const objectUrl = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = objectUrl;
-    a.download = `${label || "rapport"}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(objectUrl);
-  } catch (e) {
-    console.error("Kunne ikke laste ned PDF:", e);
-    window.open(url, "_blank");
+    try {
+      const encodedUrl = encodeURIComponent(url);
+      const encodedFilename = encodeURIComponent(`${label || "rapport"}.pdf`);
+      const response = await fetch(
+        `http://localhost:8000/pdf/download-from-url?url=${encodedUrl}&filename=${encodedFilename}`
+      );
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = `${label || "rapport"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(objectUrl);
+    } catch (e) {
+      console.error("Kunne ikke laste ned PDF:", e);
+      window.open(url, "_blank");
+    }
   }
-}
 
   async function downloadImage(url: string, label: string) {
-  try {
-    const encodedUrl = encodeURIComponent(url);
-    const encodedFilename = encodeURIComponent(`${label}.png`);
-    const response = await fetch(
-      `http://localhost:8000/pdf/download-from-url?url=${encodedUrl}&filename=${encodedFilename}`
-    );
-    const blob = await response.blob();
-    const objectUrl = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = objectUrl;
-    a.download = `${label}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(objectUrl);
-  } catch (e) {
-    console.error("Kunne ikke laste ned bilde:", e);
-    window.open(url, "_blank");
+    try {
+      const encodedUrl = encodeURIComponent(url);
+      const encodedFilename = encodeURIComponent(`${label}.png`);
+      const response = await fetch(
+        `http://localhost:8000/pdf/download-from-url?url=${encodedUrl}&filename=${encodedFilename}`
+      );
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = `${label}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(objectUrl);
+    } catch (e) {
+      console.error("Kunne ikke laste ned bilde:", e);
+      window.open(url, "_blank");
+    }
   }
-}
 
   function toggleExpanded(fileId: string) {
     setExpandedFileId((prev) => (prev === fileId ? null : fileId));
@@ -257,7 +249,6 @@ export default function FilesPage({
     }
   }
 
-  /** Build a unified list of all files for a saved report */
   function buildFilesList(file: SavedFile) {
     const pdfItems: { label: string; url: string; type: "pdf" }[] = [
       {
@@ -266,17 +257,11 @@ export default function FilesPage({
         url: file.pdfUrl,
       },
       ...(file.calcPdfUrl
-        ? [{
-            type: "pdf" as const,
-            label: `${file.projectName || "Prosjektnavn"} Utregning PDF`,
-            url: file.calcPdfUrl,
-          }]
+        ? [{ type: "pdf" as const, label: `${file.projectName || "Prosjektnavn"} Utregning PDF`, url: file.calcPdfUrl }]
         : []),
     ];
 
-    // Prefer mapImageUrls array; fall back to screenshotUrls object for older records
     let imageItems: { label: string; url: string; type: "image" }[] = [];
-
     if (file.mapImageUrls?.length) {
       imageItems = file.mapImageUrls.map((url, i) => ({
         type: "image" as const,
@@ -301,23 +286,13 @@ export default function FilesPage({
   return (
     <div className="min-h-dvh w-full bg-[#F6F8FF] dark:bg-slate-950">
 
-      {/* ── Header ── */}
+      {/* ── Header (no search field) ── */}
       <header className="sticky top-0 z-[9999] w-full bg-[#213F53] dark:bg-slate-950">
         <div className="flex h-16 w-full items-center justify-between px-5">
           <Link to="/" className="flex items-center gap-3">
             <img src={logo} alt="Trygt Overvann logo" className="h-10 w-auto cursor-pointer object-contain" />
             <div className="text-lg font-semibold text-white">Trygt Overvann AS</div>
           </Link>
-
-          <div className="flex flex-1 justify-center px-4">
-            <input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="h-10 w-full max-w-xl rounded-xl bg-white px-5 text-center text-sm text-slate-900 shadow-md outline-none placeholder:text-slate-400 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400"
-              placeholder="Søk etter filnavn"
-              aria-label="Søk etter filnavn"
-            />
-          </div>
 
           <div className="relative">
             <button
@@ -345,7 +320,6 @@ export default function FilesPage({
 
             {menuOpen && (
               <div ref={menuRef} className="absolute right-0 mt-3 z-[9999] w-72 rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
-                {/* User info */}
                 <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
                   <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-300 bg-white text-sm font-semibold text-black dark:border-slate-600 dark:bg-slate-700 dark:text-white">
                     {user?.photoURL ? (
@@ -359,7 +333,6 @@ export default function FilesPage({
                   <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{user?.displayName || "Bruker"}</div>
                 </div>
 
-                {/* Profil */}
                 <button onClick={() => { setMenuOpen(false); navigate("/profil"); }} className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800">
                   <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
                     <span className="inline-flex h-5 w-5 items-center justify-center">
@@ -373,7 +346,6 @@ export default function FilesPage({
                   <span className="text-slate-400">›</span>
                 </button>
 
-                {/* Filer */}
                 <button onClick={() => { setMenuOpen(false); navigate("/filer"); }} className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800">
                   <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
                     <span className="inline-flex h-5 w-5 items-center justify-center">
@@ -386,7 +358,6 @@ export default function FilesPage({
                   <span className="text-slate-400">›</span>
                 </button>
 
-                {/* Mørk modus */}
                 <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 dark:border-slate-800">
                   <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
                     <span className="inline-flex h-5 w-5 items-center justify-center">
@@ -406,7 +377,6 @@ export default function FilesPage({
                   </button>
                 </div>
 
-                {/* Logg ut */}
                 <button onClick={handleLogout} className="w-full border-t border-slate-100 px-4 py-3 text-left hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 text-slate-800 dark:text-slate-100">
@@ -431,7 +401,30 @@ export default function FilesPage({
       {/* ── Main ── */}
       <main className="bg-[#F6F8FF] px-8 py-8 dark:bg-slate-950">
         <div className="mx-auto max-w-6xl">
-          <h1 className="mb-8 text-3xl font-bold text-slate-900 dark:text-slate-100">Mine filer</h1>
+
+          {/* Title + search row */}
+          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Mine filer</h1>
+            <div className="relative w-full sm:w-80">
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              >
+                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+                <path d="M16.5 16.5l4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+              <input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-slate-700"
+                placeholder="Søk etter filnavn..."
+                aria-label="Søk etter filnavn"
+              />
+            </div>
+          </div>
 
           {loadingFiles ? (
             <div className="text-sm text-slate-500 dark:text-slate-400">Laster filer...</div>
@@ -501,7 +494,6 @@ export default function FilesPage({
 
               return (
                 <>
-                  {/* Header */}
                   <div className="mb-1 flex items-start justify-between gap-4">
                     <div>
                       <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
@@ -528,7 +520,6 @@ export default function FilesPage({
                     {file.description || "PDF-rapport lagret fra prosjektet."}
                   </p>
 
-                  {/* PDF rows */}
                   <div className="space-y-2">
                     {pdfItems.map((item, i) => (
                       <FileRow
@@ -541,7 +532,6 @@ export default function FilesPage({
                     ))}
                   </div>
 
-                  {/* Image rows */}
                   {imageItems.length > 0 && (
                     <>
                       <div className="my-4 border-t border-slate-200 dark:border-slate-700" />
@@ -559,22 +549,16 @@ export default function FilesPage({
                     </>
                   )}
 
-                  {/* Download all */}
                   <button
-  onClick={async () => {
-    for (const item of pdfItems) {
-      await downloadPdf(item.url, item.label);
-    }
-    for (const item of imageItems) {
-      await downloadImage(item.url, item.label);
-    }
-  }}
-  className="mt-4 w-full rounded-xl border border-slate-300 bg-white py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
->
-  Last ned alle filer
-</button>
+                    onClick={async () => {
+                      for (const item of pdfItems) await downloadPdf(item.url, item.label);
+                      for (const item of imageItems) await downloadImage(item.url, item.label);
+                    }}
+                    className="mt-4 w-full rounded-xl border border-slate-300 bg-white py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    Last ned alle filer
+                  </button>
 
-                  {/* Delete */}
                   <button
                     onClick={() => handleDeleteFile(file)}
                     className="mt-2 w-full rounded-xl border border-red-200 bg-white py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-800 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/30"

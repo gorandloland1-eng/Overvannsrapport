@@ -22,6 +22,8 @@ import { useTerrainState } from "../hooks/useTerrainState";
 import { useGeneratePdf } from "../hooks/useGeneratePdf";
 
 type MobileTab = "map" | "ivf" | "sidebar";
+type RightPanelView = "map" | "ivf";
+type MapLayer = "kart" | "terreng" | "satellitt";
 
 export default function HomePage({
   darkMode,
@@ -32,10 +34,14 @@ export default function HomePage({
 }) {
   const { user } = useAuth();
 
-  // --- Hooks --- //
+  // --- Refs --- //
+  const mapRef = useRef(null);
+
+  // --- Form / PDF --- //
   const { form, setField, resetForm } = useFormState();
   const { pdfSaving, pdfError, handleGeneratePdf } = useGeneratePdf();
 
+  // --- Property state --- //
   const {
     propertyBoundary,
     setPropertyBoundary,
@@ -62,6 +68,7 @@ export default function HomePage({
     resetProperty,
   } = usePropertyState();
 
+  // --- Terrain state --- //
   const {
     pointA,
     setPointA,
@@ -81,13 +88,11 @@ export default function HomePage({
   } = useTerrainState();
 
   // --- UI state --- //
-  const [rightPanelView, setRightPanelView] = useState<"map" | "ivf">("map");
+  const [rightPanelView, setRightPanelView] = useState<RightPanelView>("map");
   const [mobileTab, setMobileTab] = useState<MobileTab>("map");
-  const [mapLayer, setMapLayer] = useState<"kart" | "terreng" | "satellitt">(
-    "kart"
-  );
+  const [mapLayer, setMapLayer] = useState<MapLayer>("kart");
 
-  // --- Weather / IVF --- //
+  // --- Weather / IVF state --- //
   const [weatherStations, setWeatherStations] = useState<WeatherStation[]>([]);
   const [selectedStationId, setSelectedStationId] = useState("");
   const [stationSearch, setStationSearch] = useState("");
@@ -96,21 +101,24 @@ export default function HomePage({
   const [ivfLoading, setIvfLoading] = useState(false);
   const [ivfError, setIvfError] = useState("");
 
+  // --- Calculation data --- //
   const [soilTypes, setSoilTypes] = useState([]);
-  const mapRef = useRef(null);
 
   const selectedStation = weatherStations.find(
-    (s) => s.id === selectedStationId
+    (station) => station.id === selectedStationId
   );
 
-  // --- Effects --- //
+  // ---------------------------------------------------------------------------
+  // Effects
+  // ---------------------------------------------------------------------------
+
   useEffect(() => {
     fetchWeatherStations()
       .then((data) => {
-        if (data.length > 0) {
-          setWeatherStations(data);
-          setSelectedStationId(data[0].id);
-        }
+        if (!data.length) return;
+
+        setWeatherStations(data);
+        setSelectedStationId(data[0].id);
       })
       .catch(console.error);
   }, []);
@@ -123,13 +131,13 @@ export default function HomePage({
 
     fetchIvfData(selectedStationId)
       .then(setIvfData)
-      .catch((e) => setIvfError(e.message))
+      .catch((error) => setIvfError(error.message))
       .finally(() => setIvfLoading(false));
   }, [selectedStationId]);
 
   useEffect(() => {
     fetch("http://localhost:8000/calculation/jordtyper")
-      .then((r) => r.json())
+      .then((response) => response.json())
       .then(setSoilTypes)
       .catch(() => {});
   }, []);
@@ -137,20 +145,38 @@ export default function HomePage({
   useEffect(() => {
     if (!mapRef.current) return;
 
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       mapRef.current?.invalidateSize?.({ pan: false });
     }, 100);
+
+    return () => clearTimeout(timeout);
   }, [mobileTab, rightPanelView]);
 
-  // --- Handlers --- //
+  // ---------------------------------------------------------------------------
+  // Handlers
+  // ---------------------------------------------------------------------------
+
+  function resetTerrainPoints() {
+    setPointA(null);
+    setPointB(null);
+    setElevation(null);
+    setLength(null);
+    setConcentrationTime(null);
+    setTerrainError("");
+  }
+
+  function resetTerrainResult() {
+    setElevation(null);
+    setLength(null);
+    setConcentrationTime(null);
+    setTerrainError("");
+  }
+
   function handleMapPick(lat: number, lng: number) {
-    if (!pointA || (pointA && pointB)) {
+    if (!pointA || pointB) {
       setPointA({ lat, lng });
       setPointB(null);
-      setElevation(null);
-      setLength(null);
-      setConcentrationTime(null);
-      setTerrainError("");
+      resetTerrainResult();
       return;
     }
 
@@ -164,8 +190,8 @@ export default function HomePage({
         setElevation(data.hoydeforskjell_m);
         setConcentrationTime(data.konsentrasjonstid_ivf_min);
       })
-      .catch((e) => {
-        setTerrainError(e.message);
+      .catch((error) => {
+        setTerrainError(error.message);
         setLength(null);
         setElevation(null);
         setConcentrationTime(null);
@@ -204,9 +230,9 @@ export default function HomePage({
       if (data.warnings?.length > 0) {
         setPropertyError(data.warnings.join(" "));
       }
-    } catch (e) {
+    } catch (error) {
       setPropertyError(
-        e instanceof Error ? e.message : "Could not look up property."
+        error instanceof Error ? error.message : "Could not look up property."
       );
     } finally {
       setMatrikkelLoading(false);
@@ -218,6 +244,20 @@ export default function HomePage({
     resetProperty();
     resetTerrain();
   }
+
+  function handleShowMap() {
+    setRightPanelView("map");
+    setMobileTab("map");
+  }
+
+  function handleShowIvf() {
+    setRightPanelView("ivf");
+    setMobileTab("ivf");
+  }
+
+  // ---------------------------------------------------------------------------
+  // Shared props
+  // ---------------------------------------------------------------------------
 
   const pdfOptions = {
     userId: user?.uid,
@@ -243,6 +283,66 @@ export default function HomePage({
     selectedStation,
   };
 
+  const sidebarProps = {
+    form,
+    setField,
+    municipalityNumber,
+    cadastralNumber,
+    propertyNumber,
+    setMunicipalityNumber,
+    setCadastralNumber,
+    setPropertyNumber,
+    handleMatrikkelLookup,
+    matrikkelLoading,
+    propertyAddress,
+    propertyMatrikkel,
+    propertyError,
+    propertyLoading,
+    weatherStations,
+    selectedStationId,
+    setSelectedStationId,
+    stationSearch,
+    setStationSearch,
+    stationDropdownOpen,
+    setStationDropdownOpen,
+    elevation,
+    length,
+    concentrationTime,
+    terrainLoading,
+    terrainError,
+    soilTypes,
+    handleGeneratePdf: () => handleGeneratePdf(pdfOptions),
+    pdfSaving,
+    pdfError,
+    handleReset,
+  };
+
+  const mapProps = {
+    mapRef,
+    mapLayer,
+    setMapLayer,
+    propertyBoundary,
+    pointA,
+    pointB,
+    mouseCoord,
+    clickedCoord,
+    onPick: handleMapPick,
+    onSingleClick: (lat: number, lng: number) => setClickedCoord({ lat, lng }),
+    onCancelSingleClick: () => setClickedCoord(null),
+    onMouseMove: (lat: number, lng: number) => setMouseCoord({ lat, lng }),
+  };
+
+  const ivfPanelProps = {
+    ivfData,
+    ivfLoading,
+    ivfError,
+    selectedStation,
+  };
+
+  // ---------------------------------------------------------------------------
+  // Small inner components
+  // ---------------------------------------------------------------------------
+
   function PanelToggle({ className = "" }: { className?: string }) {
     return (
       <div
@@ -250,10 +350,7 @@ export default function HomePage({
       >
         <button
           type="button"
-          onClick={() => {
-            setRightPanelView("map");
-            setMobileTab("map");
-          }}
+          onClick={handleShowMap}
           className={`flex items-center justify-center px-4 py-2 transition ${
             rightPanelView === "map"
               ? "bg-[#213F53] text-white"
@@ -267,10 +364,7 @@ export default function HomePage({
 
         <button
           type="button"
-          onClick={() => {
-            setRightPanelView("ivf");
-            setMobileTab("ivf");
-          }}
+          onClick={handleShowIvf}
           className={`flex items-center justify-center px-4 py-2 transition ${
             rightPanelView === "ivf"
               ? "bg-[#213F53] text-white"
@@ -285,52 +379,51 @@ export default function HomePage({
     );
   }
 
+  function MobileTabButton({
+    tab,
+    icon,
+    label,
+  }: {
+    tab: MobileTab;
+    icon: React.ReactNode;
+    label: string;
+  }) {
+    const active = mobileTab === tab;
+
+    return (
+      <button
+        type="button"
+        onClick={() => setMobileTab(tab)}
+        className={`flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition ${
+          active
+            ? "border-b-2 border-[#213F53] text-[#213F53] dark:border-sky-400 dark:text-sky-400"
+            : "text-slate-500 dark:text-slate-400"
+        }`}
+      >
+        {icon}
+        {label}
+      </button>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
+
   return (
     <div className="h-dvh w-full overflow-hidden bg-[#F6F8FF] dark:bg-slate-950">
       <Header
         darkMode={darkMode}
-        onToggleDarkMode={() => setDarkMode((v) => !v)}
+        onToggleDarkMode={() => setDarkMode((value) => !value)}
       />
 
       <main className="h-[calc(100dvh-4rem)] min-h-0 overflow-hidden">
         {/* Desktop layout */}
         <div className="hidden h-full min-h-0 min-w-0 xl:grid xl:grid-cols-[320px_minmax(0,1fr)] xl:overflow-hidden">
-          <Sidebar
-            form={form}
-            setField={setField}
-            municipalityNumber={municipalityNumber}
-            cadastralNumber={cadastralNumber}
-            propertyNumber={propertyNumber}
-            setMunicipalityNumber={setMunicipalityNumber}
-            setCadastralNumber={setCadastralNumber}
-            setPropertyNumber={setPropertyNumber}
-            handleMatrikkelLookup={handleMatrikkelLookup}
-            matrikkelLoading={matrikkelLoading}
-            propertyAddress={propertyAddress}
-            propertyMatrikkel={propertyMatrikkel}
-            propertyError={propertyError}
-            propertyLoading={propertyLoading}
-            weatherStations={weatherStations}
-            selectedStationId={selectedStationId}
-            setSelectedStationId={setSelectedStationId}
-            stationSearch={stationSearch}
-            setStationSearch={setStationSearch}
-            stationDropdownOpen={stationDropdownOpen}
-            setStationDropdownOpen={setStationDropdownOpen}
-            elevation={elevation}
-            length={length}
-            concentrationTime={concentrationTime}
-            terrainLoading={terrainLoading}
-            terrainError={terrainError}
-            soilTypes={soilTypes}
-            handleGeneratePdf={() => handleGeneratePdf(pdfOptions)}
-            pdfSaving={pdfSaving}
-            pdfError={pdfError}
-            handleReset={handleReset}
-          />
+          <Sidebar {...sidebarProps} />
 
           <section className="relative h-full min-h-0 min-w-0 overflow-hidden">
-            <div className="absolute left-4 top-3 z-[1000]">
+            <div className="absolute left-16 top-3 z-[2000]">
               <PanelToggle />
             </div>
 
@@ -341,20 +434,7 @@ export default function HomePage({
                   : "hidden"
               }
             >
-              <PropertyMap
-                mapRef={mapRef}
-                mapLayer={mapLayer}
-                setMapLayer={setMapLayer}
-                propertyBoundary={propertyBoundary}
-                pointA={pointA}
-                pointB={pointB}
-                mouseCoord={mouseCoord}
-                clickedCoord={clickedCoord}
-                onPick={handleMapPick}
-                onSingleClick={(lat, lng) => setClickedCoord({ lat, lng })}
-                onCancelSingleClick={() => setClickedCoord(null)}
-                onMouseMove={(lat, lng) => setMouseCoord({ lat, lng })}
-              />
+              <PropertyMap {...mapProps} />
             </div>
 
             <div
@@ -364,12 +444,7 @@ export default function HomePage({
                   : "hidden"
               }
             >
-              <IvfPanel
-                ivfData={ivfData}
-                ivfLoading={ivfLoading}
-                ivfError={ivfError}
-                selectedStation={selectedStation}
-              />
+              <IvfPanel {...ivfPanelProps} />
             </div>
           </section>
         </div>
@@ -377,41 +452,17 @@ export default function HomePage({
         {/* Mobile layout */}
         <div className="flex h-full min-h-0 flex-col xl:hidden">
           <div className="flex shrink-0 border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-            <button
-              type="button"
-              onClick={() => setMobileTab("map")}
-              className={`flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition ${
-                mobileTab === "map"
-                  ? "border-b-2 border-[#213F53] text-[#213F53] dark:border-sky-400 dark:text-sky-400"
-                  : "text-slate-500 dark:text-slate-400"
-              }`}
-            >
-              <Map size={15} /> Kart
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMobileTab("ivf")}
-              className={`flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition ${
-                mobileTab === "ivf"
-                  ? "border-b-2 border-[#213F53] text-[#213F53] dark:border-sky-400 dark:text-sky-400"
-                  : "text-slate-500 dark:text-slate-400"
-              }`}
-            >
-              <Table2 size={15} /> IVF
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMobileTab("sidebar")}
-              className={`flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition ${
-                mobileTab === "sidebar"
-                  ? "border-b-2 border-[#213F53] text-[#213F53] dark:border-sky-400 dark:text-sky-400"
-                  : "text-slate-500 dark:text-slate-400"
-              }`}
-            >
-              <SlidersHorizontal size={15} /> Innstillinger
-            </button>
+            <MobileTabButton tab="map" icon={<Map size={15} />} label="Kart" />
+            <MobileTabButton
+              tab="ivf"
+              icon={<Table2 size={15} />}
+              label="IVF"
+            />
+            <MobileTabButton
+              tab="sidebar"
+              icon={<SlidersHorizontal size={15} />}
+              label="Innstillinger"
+            />
           </div>
 
           <div className="relative min-h-0 flex-1 overflow-hidden">
@@ -422,68 +473,18 @@ export default function HomePage({
                   : "pointer-events-none z-0 opacity-0"
               }`}
             >
-              <PropertyMap
-                mapRef={mapRef}
-                mapLayer={mapLayer}
-                setMapLayer={setMapLayer}
-                propertyBoundary={propertyBoundary}
-                pointA={pointA}
-                pointB={pointB}
-                mouseCoord={mouseCoord}
-                clickedCoord={clickedCoord}
-                onPick={handleMapPick}
-                onSingleClick={(lat, lng) => setClickedCoord({ lat, lng })}
-                onCancelSingleClick={() => setClickedCoord(null)}
-                onMouseMove={(lat, lng) => setMouseCoord({ lat, lng })}
-              />
+              <PropertyMap {...mapProps} />
             </div>
 
             {mobileTab === "ivf" && (
               <div className="absolute inset-0 z-10 overflow-auto">
-                <IvfPanel
-                  ivfData={ivfData}
-                  ivfLoading={ivfLoading}
-                  ivfError={ivfError}
-                  selectedStation={selectedStation}
-                />
+                <IvfPanel {...ivfPanelProps} />
               </div>
             )}
 
             {mobileTab === "sidebar" && (
               <div className="absolute inset-0 z-10 overflow-auto">
-                <Sidebar
-                  form={form}
-                  setField={setField}
-                  municipalityNumber={municipalityNumber}
-                  cadastralNumber={cadastralNumber}
-                  propertyNumber={propertyNumber}
-                  setMunicipalityNumber={setMunicipalityNumber}
-                  setCadastralNumber={setCadastralNumber}
-                  setPropertyNumber={setPropertyNumber}
-                  handleMatrikkelLookup={handleMatrikkelLookup}
-                  matrikkelLoading={matrikkelLoading}
-                  propertyAddress={propertyAddress}
-                  propertyMatrikkel={propertyMatrikkel}
-                  propertyError={propertyError}
-                  propertyLoading={propertyLoading}
-                  weatherStations={weatherStations}
-                  selectedStationId={selectedStationId}
-                  setSelectedStationId={setSelectedStationId}
-                  stationSearch={stationSearch}
-                  setStationSearch={setStationSearch}
-                  stationDropdownOpen={stationDropdownOpen}
-                  setStationDropdownOpen={setStationDropdownOpen}
-                  elevation={elevation}
-                  length={length}
-                  concentrationTime={concentrationTime}
-                  terrainLoading={terrainLoading}
-                  terrainError={terrainError}
-                  soilTypes={soilTypes}
-                  handleGeneratePdf={() => handleGeneratePdf(pdfOptions)}
-                  pdfSaving={pdfSaving}
-                  pdfError={pdfError}
-                  handleReset={handleReset}
-                />
+                <Sidebar {...sidebarProps} />
               </div>
             )}
           </div>
