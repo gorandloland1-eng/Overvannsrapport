@@ -7,7 +7,7 @@ export default function ProjectSection({ projectName, setField }: Props) {
   return (
     <section>
       <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-        Project name
+        Prosjekt navn
       </label>
       <input
         value={projectName}
