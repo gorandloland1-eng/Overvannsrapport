@@ -25,6 +25,42 @@ type MobileTab = "map" | "ivf" | "sidebar";
 type RightPanelView = "map" | "ivf";
 type MapLayer = "kart" | "terreng" | "satellitt";
 
+function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function findNearestStation(
+  centroid: { lat: number; lng: number } | null,
+  stations: WeatherStation[]
+) {
+  if (!centroid || !stations.length) return null;
+
+  return (
+    stations
+      .filter((station) => station.lat != null && station.lon != null)
+      .map((station) => ({
+        station,
+        distance: distanceKm(
+          centroid.lat,
+          centroid.lng,
+          Number(station.lat),
+          Number(station.lon)
+        ),
+      }))
+      .sort((a, b) => a.distance - b.distance)[0]?.station ?? null
+  );
+}
+
 export default function HomePage({
   darkMode,
   setDarkMode,
@@ -108,10 +144,6 @@ export default function HomePage({
     (station) => station.id === selectedStationId
   );
 
-  // ---------------------------------------------------------------------------
-  // Effects
-  // ---------------------------------------------------------------------------
-
   useEffect(() => {
     fetchWeatherStations()
       .then((data) => {
@@ -151,19 +183,6 @@ export default function HomePage({
 
     return () => clearTimeout(timeout);
   }, [mobileTab, rightPanelView]);
-
-  // ---------------------------------------------------------------------------
-  // Handlers
-  // ---------------------------------------------------------------------------
-
-  function resetTerrainPoints() {
-    setPointA(null);
-    setPointB(null);
-    setElevation(null);
-    setLength(null);
-    setConcentrationTime(null);
-    setTerrainError("");
-  }
 
   function resetTerrainResult() {
     setElevation(null);
@@ -224,6 +243,14 @@ export default function HomePage({
         kommunenummer: data.kommunenummer,
       });
 
+      const nearestStation = findNearestStation(data.centroid, weatherStations);
+
+      if (nearestStation) {
+        setSelectedStationId(nearestStation.id);
+        setStationSearch("");
+        setStationDropdownOpen(false);
+      }
+
       setRightPanelView("map");
       setMobileTab("map");
 
@@ -254,10 +281,6 @@ export default function HomePage({
     setRightPanelView("ivf");
     setMobileTab("ivf");
   }
-
-  // ---------------------------------------------------------------------------
-  // Shared props
-  // ---------------------------------------------------------------------------
 
   const pdfOptions = {
     userId: user?.uid,
@@ -339,10 +362,6 @@ export default function HomePage({
     selectedStation,
   };
 
-  // ---------------------------------------------------------------------------
-  // Small inner components
-  // ---------------------------------------------------------------------------
-
   function PanelToggle({ className = "" }: { className?: string }) {
     return (
       <div
@@ -406,10 +425,6 @@ export default function HomePage({
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
-
   return (
     <div className="h-dvh w-full overflow-hidden bg-[#F6F8FF] dark:bg-slate-950">
       <Header
@@ -418,7 +433,6 @@ export default function HomePage({
       />
 
       <main className="h-[calc(100dvh-4rem)] min-h-0 overflow-hidden">
-        {/* Desktop layout */}
         <div className="hidden h-full min-h-0 min-w-0 xl:grid xl:grid-cols-[320px_minmax(0,1fr)] xl:overflow-hidden">
           <Sidebar {...sidebarProps} />
 
@@ -449,7 +463,6 @@ export default function HomePage({
           </section>
         </div>
 
-        {/* Mobile layout */}
         <div className="flex h-full min-h-0 flex-col xl:hidden">
           <div className="flex shrink-0 border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
             <MobileTabButton tab="map" icon={<Map size={15} />} label="Kart" />
