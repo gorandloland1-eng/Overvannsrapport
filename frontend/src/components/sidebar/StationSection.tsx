@@ -1,4 +1,5 @@
 import { ChevronDown } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 type Station = {
   id: string;
@@ -28,6 +29,7 @@ export default function StationSection({
   setDropdownOpen,
   error,
 }: Props) {
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
   const selectedStation = stations.find((s) => s.id === selectedStationId);
 
   const filteredStations = stations.filter((s) =>
@@ -38,13 +40,27 @@ export default function StationSection({
 
   const hasError = !!error && !selectedStationId;
 
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (!dropdownOpen) return;
+
+      const target = e.target as Node;
+      if (!dropdownRef.current?.contains(target)) {
+        setDropdownOpen(false);
+      }
+    }
+
+    window.addEventListener("mousedown", onDown);
+    return () => window.removeEventListener("mousedown", onDown);
+  }, [dropdownOpen, setDropdownOpen]);
+
   return (
     <section className="relative z-30">
       <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
         Værstasjon
       </label>
 
-      <div className="relative z-30">
+      <div ref={dropdownRef} className="relative z-30">
         <input
           value={search}
           onChange={(e) => { setSearch(e.target.value); setDropdownOpen(true); }}
