@@ -183,7 +183,7 @@ export function useGeneratePdf() {
       setPdfError(
         e instanceof Error
           ? e.message
-          : "Something went wrong generating the PDF"
+          : "Noe gikk galt under generering av PDF"
       );
     } finally {
       setPdfSaving(false);

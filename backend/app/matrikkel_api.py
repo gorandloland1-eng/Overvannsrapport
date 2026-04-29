@@ -296,7 +296,7 @@ def eiendom_oppslag(payload: EiendomOppslagRequest) -> EiendomOppslagResponse:
     print(f"[oppslag] adresse={adresse} koordinat=lat={lat} lng={lng}")
 
     if not adresse:
-        warnings.append("No address found for this cadastral number.")
+        warnings.append("Fant ingen adresse for dette gårds- og bruksnummeret.")
 
     # Steg 2: hent polygon via BBOX fra koordinat
     geojson = None
@@ -319,9 +319,9 @@ def eiendom_oppslag(payload: EiendomOppslagRequest) -> EiendomOppslagResponse:
                 "bruksnummer": payload.bruksnummer,
             }
         else:
-            warnings.append("No property boundary found for this cadastral number.")
+            warnings.append("Fant ingen eiendomsgrense for dette gårds- og bruksnummeret.")
     else:
-        warnings.append("No property boundary found for this cadastral number.")
+        warnings.append("Fant ingen eiendomsgrense for dette gårds- og bruksnummeret.")
 
     print(f"[oppslag] polygon={'yes' if geojson else 'no'} centroid={centroid} bounds={bounds}")
     print(f"{'='*40}\n")
@@ -382,9 +382,9 @@ def eiendom_for_punkt(lat: float, lng: float, radius: int = 50) -> EiendomPunktR
     grense = _hent_grense_fra_bbox(lat, lng)
 
     if not adresse and not matrikkel:
-        warnings.append("No address found for this location.")
+        warnings.append("Fant ingen adresse for denne plasseringen.")
     if not grense:
-        warnings.append("No property boundary found for this location.")
+        warnings.append("Fant ingen eiendomsgrense for denne plasseringen.")
 
     print(f"[punkt] adresse={adresse} grense={'yes' if grense else 'no'}")
     print(f"{'='*40}\n")

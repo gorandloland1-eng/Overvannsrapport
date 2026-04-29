@@ -47,7 +47,7 @@ async def upload_screenshot(
         raise HTTPException(status_code=500, detail=f"Kunne ikke lagre bilde: {str(e)}")
 
     return {
-        "message": "Screenshot lagret",
+        "message": "Skjermbilde lagret",
         "filepath": filepath,
         "filename": filename,
     }

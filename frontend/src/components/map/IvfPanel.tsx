@@ -11,17 +11,17 @@ export default function IvfPanel({ ivfData, ivfLoading, ivfError, selectedStatio
   return (
     <div className="h-full overflow-auto bg-white p-4 pt-20 dark:bg-slate-950">
       <div className="mb-4">
-        <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">IVF table</div>
+        <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">IVF-tabell</div>
         <div className="text-sm text-slate-500 dark:text-slate-400">
-          {ivfData?.station_name || selectedStation?.name || "No weather station selected"}
+          {ivfData?.station_name || selectedStation?.name || "Ingen værstasjon valgt"}
         </div>
         {ivfData?.first_year && ivfData?.last_year && (
           <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Data from {ivfData.first_year} to {ivfData.last_year}
+            Data fra {ivfData.first_year} til {ivfData.last_year}
           </div>
         )}
       </div>
-      {ivfLoading && <div className="text-sm text-slate-500 dark:text-slate-400">Loading IVF data...</div>}
+      {ivfLoading && <div className="text-sm text-slate-500 dark:text-slate-400">Laster IVF-data...</div>}
       {ivfError && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
           {ivfError}
@@ -34,12 +34,12 @@ export default function IvfPanel({ ivfData, ivfLoading, ivfError, selectedStatio
               <tr className="bg-blue-100 dark:bg-slate-800">
                 <th className="border-r border-b border-slate-400 px-3 py-2"></th>
                 <th colSpan={ivfData.durations.length} className="border-b border-slate-400 px-3 py-2 text-left font-semibold text-slate-700 dark:text-slate-200">
-                  Durations (minutes)
+                  Varigheter (minutter)
                 </th>
               </tr>
               <tr className="bg-blue-100 dark:bg-slate-800">
                 <th className="border-r border-b border-slate-400 px-3 py-2 text-left font-semibold text-slate-700 dark:text-slate-200">
-                  Return period (yr)
+                  Returperiode (år)
                 </th>
                 {ivfData.durations.map((d) => (
                   <th key={d} className="border-r border-b border-slate-400 px-2 py-2 text-center font-semibold text-slate-700 last:border-r-0 dark:text-slate-200">
@@ -66,7 +66,7 @@ export default function IvfPanel({ ivfData, ivfLoading, ivfError, selectedStatio
         </div>
       )}
       {!ivfLoading && !ivfError && !ivfData && (
-        <div className="text-sm text-slate-500 dark:text-slate-400">No IVF data available.</div>
+        <div className="text-sm text-slate-500 dark:text-slate-400">Ingen IVF-data tilgjengelig.</div>
       )}
     </div>
   );

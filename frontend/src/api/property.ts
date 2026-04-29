@@ -33,7 +33,7 @@ export async function fetchPropertyByMatrikkel(
       bruksnummer: propertyNumber,
     }),
   });
-  if (!res.ok) throw new Error((await res.text()) || "Could not look up property");
+  if (!res.ok) throw new Error((await res.text()) || "Kunne ikke slå opp eiendom");
   return res.json();
 }
 
@@ -45,6 +45,6 @@ export async function fetchPropertyByPoint(
   const res = await fetch(
     `${BASE}/v1/eiendom/punkt?lat=${lat}&lng=${lng}&radius=${radius}`
   );
-  if (!res.ok) throw new Error((await res.text()) || "Could not fetch property data");
+  if (!res.ok) throw new Error((await res.text()) || "Kunne ikke hente eiendomsdata");
   return res.json();
 }
