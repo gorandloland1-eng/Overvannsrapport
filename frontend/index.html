@@ -2,9 +2,32 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" href="/favicon.ico?v=4" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=4" />
+    <link rel="shortcut icon" href="/favicon.ico?v=4" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=4" />
+    <script>
+      (() => {
+        const version = Date.now();
+        const icons = [
+          { rel: "icon", href: `/favicon.ico?v=${version}`, sizes: "any" },
+          { rel: "icon", href: `/favicon-32x32.png?v=${version}`, type: "image/png", sizes: "32x32" },
+          { rel: "icon", href: `/favicon-16x16.png?v=${version}`, type: "image/png", sizes: "16x16" },
+          { rel: "shortcut icon", href: `/favicon.ico?v=${version}` },
+          { rel: "apple-touch-icon", href: `/apple-touch-icon.png?v=${version}`, sizes: "180x180" },
+        ];
+
+        document.querySelectorAll("link[rel*='icon']").forEach((element) => element.remove());
+        icons.forEach((icon) => {
+          const link = document.createElement("link");
+          Object.entries(icon).forEach(([key, value]) => link.setAttribute(key, value));
+          document.head.appendChild(link);
+        });
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>overvannsrapport</title>
+    <title>Overvannskalkulator</title>
   </head>
   <body>
     <div id="root"></div>
