@@ -21,12 +21,12 @@ export type IvfResponse = {
 
 export async function fetchWeatherStations(): Promise<WeatherStation[]> {
   const res = await fetch(`${BASE}/ivf/stations`);
-  if (!res.ok) throw new Error("Could not fetch weather stations");
+  if (!res.ok) throw new Error("Kunne ikke hente værstasjoner");
   return res.json();
 }
 
 export async function fetchIvfData(stationId: string): Promise<IvfResponse> {
   const res = await fetch(`${BASE}/ivf/ivf/${stationId}`);
-  if (!res.ok) throw new Error((await res.text()) || "Could not fetch IVF data");
+  if (!res.ok) throw new Error((await res.text()) || "Kunne ikke hente IVF-data");
   return res.json();
 }

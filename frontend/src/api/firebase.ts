@@ -37,8 +37,8 @@ export interface PdfReportData {
 export async function savePdfReport(report: PdfReportData): Promise<void> {
   await addDoc(collection(db, "pdfReports"), {
     userId: report.userId,
-    projectName: report.projectName.trim() || "Unknown project",
-    description: "Stormwater report",
+    projectName: report.projectName.trim() || "Ukjent prosjekt",
+    description: "Overvannsrapport",
     pdfUrl: report.pdfUrl,
     calcPdfUrl: report.calcPdfUrl ?? null,        // <-- ny
     mapImageUrls: report.mapImageUrls ?? [],      // <-- ny
@@ -93,7 +93,7 @@ async function captureMapBlob(mapContainer: HTMLElement): Promise<Blob> {
 
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
-      if (!blob) return reject(new Error("Failed to create blob"));
+      if (!blob) return reject(new Error("Kunne ikke opprette bildefil"));
       resolve(blob);
     }, "image/png");
   });
@@ -126,7 +126,7 @@ export async function saveMapScreenshotLocally(
   });
 
   if (!res.ok) {
-    throw new Error((await res.text()) || "Could not save screenshot locally");
+    throw new Error((await res.text()) || "Kunne ikke lagre skjermbilde lokalt");
   }
 
   const data = await res.json();

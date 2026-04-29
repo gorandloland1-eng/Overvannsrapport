@@ -206,7 +206,7 @@ export default function HomePage({
       }
     } catch (e) {
       setPropertyError(
-        e instanceof Error ? e.message : "Could not look up property."
+        e instanceof Error ? e.message : "Kunne ikke slå opp eiendom."
       );
     } finally {
       setMatrikkelLoading(false);
@@ -259,8 +259,8 @@ export default function HomePage({
               ? "bg-[#213F53] text-white"
               : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
           }`}
-          aria-label="Map view"
-          title="Map"
+          aria-label="Kartvisning"
+          title="Kart"
         >
           <Map size={18} />
         </button>
@@ -276,8 +276,8 @@ export default function HomePage({
               ? "bg-[#213F53] text-white"
               : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
           }`}
-          aria-label="IVF table"
-          title="IVF table"
+          aria-label="IVF-tabell"
+          title="IVF-tabell"
         >
           <Table2 size={18} />
         </button>

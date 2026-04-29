@@ -97,7 +97,7 @@ export default function PropertySection({
   return (
     <section>
       <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-        Property ID
+        Eiendoms-ID
       </label>
 
       {/* Guided single input */}
@@ -164,7 +164,7 @@ export default function PropertySection({
           disabled={loading}
           className="h-9 w-full rounded-xl bg-[#213F53] text-sm font-medium text-white transition hover:bg-[#1a3244] disabled:opacity-50"
         >
-          {loading ? "Looking up..." : "Look up property"}
+          {loading ? "Slår opp..." : "Slå opp eiendom"}
         </button>
       )}
 
@@ -172,10 +172,10 @@ export default function PropertySection({
       {(address || matrikkel) && !propertyLoading && (
         <div className="mt-3 rounded-xl border border-slate-200 bg-white/60 p-3 dark:border-slate-700 dark:bg-slate-800/60">
           <div className="mb-1 text-xs text-slate-500 dark:text-slate-400">
-            Nearest address
+            Nærmeste adresse
           </div>
           <div className="text-sm font-medium text-slate-800 dark:text-slate-100">
-            {address ?? "No address found"}
+            {address ?? "Ingen adresse funnet"}
           </div>
           {matrikkel && (
             <div className="mt-2 flex gap-3 text-xs text-slate-500 dark:text-slate-400">
@@ -203,7 +203,7 @@ export default function PropertySection({
       )}
 
       {propertyLoading && (
-        <p className="mt-2 text-xs text-slate-400">Fetching property data...</p>
+        <p className="mt-2 text-xs text-slate-400">Henter eiendomsdata...</p>
       )}
 
       {error && !propertyLoading && (

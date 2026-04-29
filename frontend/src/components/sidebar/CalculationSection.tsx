@@ -11,14 +11,14 @@ type Props = {
 };
 
 const RETURN_PERIOD_OPTIONS = [
-  { value: "2", label: "2 yr" },
-  { value: "5", label: "5 yr" },
-  { value: "10", label: "10 yr" },
-  { value: "20", label: "20 yr" },
-  { value: "25", label: "25 yr" },
-  { value: "50", label: "50 yr" },
-  { value: "100", label: "100 yr" },
-  { value: "200", label: "200 yr" },
+  { value: "2", label: "2 år" },
+  { value: "5", label: "5 år" },
+  { value: "10", label: "10 år" },
+  { value: "20", label: "20 år" },
+  { value: "25", label: "25 år" },
+  { value: "50", label: "50 år" },
+  { value: "100", label: "100 år" },
+  { value: "200", label: "200 år" },
 ];
 
 export default function CalculationSection({
@@ -53,7 +53,7 @@ export default function CalculationSection({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-            Area
+            Areal
           </label>
           <input
             type="number"
@@ -66,7 +66,7 @@ export default function CalculationSection({
 
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-            Return period
+            Returperiode
           </label>
 
           <div className="relative z-10" ref={returnPeriodRef}>
@@ -113,7 +113,7 @@ export default function CalculationSection({
 
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-            Climate factor
+            Klimafaktor
           </label>
           <input
             type="number"
@@ -127,7 +127,7 @@ export default function CalculationSection({
 
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-            Max discharge
+            Maks avrenning
           </label>
           <input
             type="number"
@@ -153,7 +153,7 @@ export default function CalculationSection({
           disabled={loading}
           className="h-14 w-full rounded-[16px] bg-slate-300 text-base font-semibold text-black transition hover:bg-slate-400 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600"
         >
-          {loading ? "Generating PDF..." : "Generate PDF"}
+          {loading ? "Genererer PDF..." : "Generer PDF"}
         </button>
 
         <button
@@ -161,7 +161,7 @@ export default function CalculationSection({
           onClick={onReset}
           className="h-12 w-full rounded-[16px] border border-slate-300 bg-white text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
         >
-          Reset
+          Nullstill
         </button>
       </div>
     </section>

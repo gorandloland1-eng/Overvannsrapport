@@ -33,11 +33,11 @@ export default function Header({ darkMode, onToggleDarkMode }: HeaderProps) {
             className={`flex h-10 w-10 items-center justify-center overflow-hidden rounded-full text-white transition hover:opacity-90 ${
               user?.photoURL ? "" : "border-[3px] border-white hover:bg-white/10"
             }`}
-            aria-label="Profile menu"
+            aria-label="Profilmeny"
             aria-expanded={menuOpen}
           >
             {user?.photoURL ? (
-              <img src={user.photoURL} alt="Profile" className="h-full w-full object-cover" />
+              <img src={user.photoURL} alt="Profil" className="h-full w-full object-cover" />
             ) : (
               <svg width="35" height="35" viewBox="0 0 24 24" aria-hidden="true">
                 <defs>
@@ -63,7 +63,7 @@ export default function Header({ darkMode, onToggleDarkMode }: HeaderProps) {
               <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
                 <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-300 bg-white text-sm font-semibold text-black dark:border-slate-600 dark:bg-slate-700 dark:text-white">
                   {user?.photoURL ? (
-                    <img src={user.photoURL} alt="Profile" className="h-full w-full object-cover" />
+                    <img src={user.photoURL} alt="Profil" className="h-full w-full object-cover" />
                   ) : user?.displayName ? (
                     user.displayName.split(" ").map((n) => n[0]).join("").toUpperCase()
                   ) : (
@@ -72,7 +72,7 @@ export default function Header({ darkMode, onToggleDarkMode }: HeaderProps) {
                 </div>
                 <div className="flex flex-col">
                   <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                    {user?.displayName || "User"}
+                    {user?.displayName || "Bruker"}
                   </div>
                 </div>
               </div>
@@ -89,7 +89,7 @@ export default function Header({ darkMode, onToggleDarkMode }: HeaderProps) {
                       <path d="M4 20c2-3.5 5-5 8-5s6 1.5 8 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                   </span>
-                  <span className="text-sm font-medium">Profile</span>
+                  <span className="text-sm font-medium">Profil</span>
                 </div>
                 <span className="text-slate-400">›</span>
               </button>
@@ -105,7 +105,7 @@ export default function Header({ darkMode, onToggleDarkMode }: HeaderProps) {
                       <path d="M4 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
                     </svg>
                   </span>
-                  <span className="text-sm font-medium">Files</span>
+                  <span className="text-sm font-medium">Filer</span>
                 </div>
                 <span className="text-slate-400">›</span>
               </button>
@@ -118,12 +118,12 @@ export default function Header({ darkMode, onToggleDarkMode }: HeaderProps) {
                       <path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.5 6.5 0 0 0 9.8 9.8Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
                     </svg>
                   </span>
-                  <span className="text-sm font-medium">Dark mode</span>
+                  <span className="text-sm font-medium">Mørk modus</span>
                 </div>
                 <button
                   onClick={onToggleDarkMode}
                   className={`relative h-6 w-10 rounded-full transition ${darkMode ? "bg-slate-200/30" : "bg-slate-200"}`}
-                  aria-label="Toggle dark mode"
+                  aria-label="Bytt mørk modus"
                   type="button"
                 >
                   <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${darkMode ? "left-5" : "left-0.5"}`} />
@@ -144,7 +144,7 @@ export default function Header({ darkMode, onToggleDarkMode }: HeaderProps) {
                         <path d="M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                       </svg>
                     </span>
-                    <span className="text-sm font-medium">Sign out</span>
+                    <span className="text-sm font-medium">Logg ut</span>
                   </div>
                   <span className="text-slate-400">›</span>
                 </div>
