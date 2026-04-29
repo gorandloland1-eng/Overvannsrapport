@@ -111,7 +111,7 @@ export default function AuthPage() {
 
       <div className="auth-right">
         <div className="auth-card">
-          <div className="segmented" role="tablist" aria-label="Auth mode">
+          <div className="segmented" role="tablist" aria-label="Autentiseringsmodus">
             <button
               type="button"
               className={`segmented-btn ${isLogin ? "is-active" : ""}`}

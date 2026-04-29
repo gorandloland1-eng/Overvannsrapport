@@ -37,7 +37,7 @@ export default function InfiltrationSection({
   return (
     <section className="relative z-20">
       <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-        Infiltration capacity
+        Infiltrasjonskapasitet
       </label>
 
       <div className="mb-3 flex overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
@@ -50,7 +50,7 @@ export default function InfiltrationSection({
               : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
           }`}
         >
-          Direct Q_inf
+          Direkte Q_inf
         </button>
 
         <button
@@ -62,7 +62,7 @@ export default function InfiltrationSection({
               : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
           }`}
         >
-          Soil type
+          Jordtype
         </button>
       </div>
 
@@ -86,7 +86,7 @@ export default function InfiltrationSection({
         <div className="space-y-3">
           <div className="relative z-30">
             <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">
-              Soil type
+              Jordtype
             </label>
 
             <div className="relative">
@@ -100,7 +100,7 @@ export default function InfiltrationSection({
                 placeholder={
                   selectedSoil
                     ? `${selectedSoil.navn} — ${selectedSoil.beskrivelse} (k = ${selectedSoil.k_m_s} m/s)`
-                    : "Select soil type..."
+                    : "Velg jordtype..."
                 }
                 className="h-12 w-full rounded-[22px] border border-slate-200 bg-white px-5 pr-12 text-base text-slate-900 outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:ring-slate-700"
               />
@@ -109,7 +109,7 @@ export default function InfiltrationSection({
                 type="button"
                 onClick={() => setSoilDropdownOpen(!soilDropdownOpen)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-700 dark:text-slate-200"
-                aria-label="Open soil type dropdown"
+                aria-label="Åpne nedtrekksliste for jordtype"
               >
                 <ChevronDown
                   size={20}
@@ -143,7 +143,7 @@ export default function InfiltrationSection({
                     ))
                   ) : (
                     <div className="px-4 py-2.5 text-sm text-slate-500 dark:text-slate-400">
-                      No soil types found
+                      Ingen jordtyper funnet
                     </div>
                   )}
                 </div>
@@ -154,7 +154,7 @@ export default function InfiltrationSection({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">
-                A_bottom [m²]
+                A_bunn [m²]
               </label>
               <input
                 type="number"
@@ -168,7 +168,7 @@ export default function InfiltrationSection({
 
             <div>
               <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">
-                A_side [m²]
+                A_sideflate [m²]
               </label>
               <input
                 type="number"

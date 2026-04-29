@@ -31,6 +31,6 @@ export async function generatePdf(payload: PdfPayload): Promise<PdfResponse> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error((await res.text()) || "Could not generate PDF");
+  if (!res.ok) throw new Error((await res.text()) || "Kunne ikke generere PDF");
   return res.json();
 }
