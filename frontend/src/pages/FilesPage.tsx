@@ -459,8 +459,8 @@ export default function FilesPage({
                   </div>
 
                   <div className="mb-6 text-sm text-slate-700 dark:text-slate-300">
-                    {file.description || "PDF-rapport lagret fra prosjektet."}
-                  </div>
+  {file.description || "Overvannsrapport"}
+</div>
 
                   <div className="flex gap-3">
                     <button onClick={() => toggleExpanded(file.id)} className="rounded-xl bg-[#213F53] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90">
