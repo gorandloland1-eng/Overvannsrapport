@@ -11,12 +11,11 @@ type Props = {
   stations: Station[];
   selectedStationId: string;
   setSelectedStationId: (id: string) => void;
-
   search: string;
   setSearch: (v: string) => void;
-
   dropdownOpen: boolean;
   setDropdownOpen: (v: boolean) => void;
+  error?: string;
 };
 
 export default function StationSection({
@@ -27,6 +26,7 @@ export default function StationSection({
   setSearch,
   dropdownOpen,
   setDropdownOpen,
+  error,
 }: Props) {
   const selectedStation = stations.find((s) => s.id === selectedStationId);
 
@@ -35,6 +35,8 @@ export default function StationSection({
       .toLowerCase()
       .includes(search.toLowerCase())
   );
+
+  const hasError = !!error && !selectedStationId;
 
   return (
     <section className="relative z-30">
@@ -45,21 +47,18 @@ export default function StationSection({
       <div className="relative z-30">
         <input
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setDropdownOpen(true);
-          }}
+          onChange={(e) => { setSearch(e.target.value); setDropdownOpen(true); }}
           onFocus={() => setDropdownOpen(true)}
           placeholder={
             selectedStation
-              ? `${selectedStation.name}${
-                  selectedStation.municipality
-                    ? ` (${selectedStation.municipality})`
-                    : ""
-                }`
+              ? `${selectedStation.name}${selectedStation.municipality ? ` (${selectedStation.municipality})` : ""}`
               : "Søk..."
           }
-          className="h-12 w-full rounded-[22px] border border-slate-200 bg-white px-5 pr-12 text-base text-slate-900 outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:ring-slate-700"
+          className={`h-12 w-full rounded-[22px] border bg-white px-5 pr-12 text-base text-slate-900 outline-none focus:ring-4 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400 ${
+            hasError
+              ? "border-red-400 focus:border-red-400 focus:ring-red-100 dark:border-red-500 dark:focus:ring-red-900/30"
+              : "border-slate-200 focus:border-slate-300 focus:ring-slate-200 dark:border-slate-700 dark:focus:ring-slate-700"
+          }`}
         />
 
         <button
@@ -71,9 +70,7 @@ export default function StationSection({
           <ChevronDown
             size={20}
             strokeWidth={2.2}
-            className={`transition-transform ${
-              dropdownOpen ? "rotate-180" : ""
-            }`}
+            className={`transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
           />
         </button>
 
@@ -84,19 +81,12 @@ export default function StationSection({
                 <button
                   key={station.id}
                   type="button"
-                  onClick={() => {
-                    setSelectedStationId(station.id);
-                    setSearch("");
-                    setDropdownOpen(false);
-                  }}
+                  onClick={() => { setSelectedStationId(station.id); setSearch(""); setDropdownOpen(false); }}
                   className={`block w-full px-4 py-2.5 text-left text-sm transition hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800 ${
-                    selectedStationId === station.id
-                      ? "bg-slate-100 dark:bg-slate-800"
-                      : ""
+                    selectedStationId === station.id ? "bg-slate-100 dark:bg-slate-800" : ""
                   }`}
                 >
-                  {station.name}
-                  {station.municipality && ` (${station.municipality})`}
+                  {station.name}{station.municipality && ` (${station.municipality})`}
                 </button>
               ))
             ) : (
@@ -107,6 +97,10 @@ export default function StationSection({
           </div>
         )}
       </div>
+
+      {hasError && (
+        <p className="mt-1 text-xs text-red-500 dark:text-red-400">{error}</p>
+      )}
     </section>
   );
 }
