@@ -6,7 +6,11 @@ import { useAuth } from "../auth/AuthProvider";
 import { db } from "../firebase";
 import { Map, Table2, SlidersHorizontal } from "lucide-react";
 
-import { fetchPropertyByMatrikkel } from "../api/property";
+import {
+  fetchPropertyByMatrikkel,
+  fetchAddressSearch,
+} from "../api/property";
+import type { AddressSearchResult } from "../api/property";
 import { fetchTerrain } from "../api/terrain";
 import { fetchWeatherStations, fetchIvfData } from "../api/ivf";
 import type { IvfResponse, WeatherStation } from "../api/ivf";
@@ -183,8 +187,7 @@ export default function HomePage({
     resetTerrain,
   } = useTerrainState();
 
-  const [rightPanelView, setRightPanelView] =
-    useState<RightPanelView>("map");
+  const [rightPanelView, setRightPanelView] = useState<RightPanelView>("map");
   const [mobileTab, setMobileTab] = useState<MobileTab>("map");
   const [mapLayer, setMapLayer] = useState<MapLayer>("kart");
 
@@ -197,6 +200,16 @@ export default function HomePage({
     lat: number;
     lng: number;
   } | null>(null);
+
+  const [propertyLookupMode, setPropertyLookupMode] = useState<
+    "matrikkel" | "adresse"
+  >("matrikkel");
+  const [addressSearch, setAddressSearch] = useState("");
+  const [addressResults, setAddressResults] = useState<AddressSearchResult[]>(
+    []
+  );
+  const [addressLoading, setAddressLoading] = useState(false);
+  const [addressDropdownOpen, setAddressDropdownOpen] = useState(false);
 
   const [ivfData, setIvfData] = useState<IvfResponse | null>(null);
   const [ivfLoading, setIvfLoading] = useState(false);
@@ -245,6 +258,32 @@ export default function HomePage({
 
     fetchFavorites();
   }, [user?.uid]);
+
+  useEffect(() => {
+    if (propertyLookupMode !== "adresse") return;
+
+    const query = addressSearch.trim();
+
+    if (query.length < 2) {
+      setAddressResults([]);
+      setAddressLoading(false);
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setAddressLoading(true);
+
+      fetchAddressSearch(query)
+        .then(setAddressResults)
+        .catch((e) => {
+          console.error("Adresse-søk feilet:", e);
+          setAddressResults([]);
+        })
+        .finally(() => setAddressLoading(false));
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [addressSearch, propertyLookupMode]);
 
   async function toggleFavoriteStation(stationId: string) {
     if (!user?.uid) return;
@@ -389,6 +428,42 @@ export default function HomePage({
       .finally(() => setTerrainLoading(false));
   }
 
+  async function applyPropertyLookupResult(data: any) {
+    setPropertyAddress(data.adresse ?? null);
+    setPropertyBoundary(data.polygon ?? null);
+    setPropertyMatrikkel({
+      gnr: data.gardsnummer,
+      bnr: data.bruksnummer,
+      kommunenummer: data.kommunenummer,
+    });
+
+    if (data.centroid) {
+      setStationSortOrigin(data.centroid);
+
+      const nearestStation = findNearestStation(data.centroid, weatherStations);
+      if (nearestStation) {
+        setSelectedStationId(nearestStation.id);
+        setStationSearch("");
+        setStationDropdownOpen(false);
+      }
+    }
+
+    setRightPanelView("map");
+    setMobileTab("map");
+
+    if (data.warnings?.length > 0) {
+      setPropertyError(data.warnings.join(" "));
+    }
+
+    setValidationErrors((prev) => ({
+      ...prev,
+      municipalityNumber: undefined,
+      cadastralNumber: undefined,
+      propertyNumber: undefined,
+      selectedStationId: undefined,
+    }));
+  }
+
   async function handleMatrikkelLookup() {
     if (!municipalityNumber || !cadastralNumber || !propertyNumber) return;
 
@@ -448,11 +523,50 @@ export default function HomePage({
     }
   }
 
+  async function handleAddressSelect(item: AddressSearchResult) {
+    setAddressSearch(item.adressetekst);
+    setAddressDropdownOpen(false);
+
+    setMunicipalityNumber(item.kommunenummer);
+    setCadastralNumber(String(item.gardsnummer));
+    setPropertyNumber(String(item.bruksnummer));
+
+    setMatrikkelLoading(true);
+    setPropertyError("");
+    setPropertyBoundary(null);
+    setPropertyAddress(null);
+    setPropertyMatrikkel(null);
+
+    try {
+      const data = await fetchPropertyByMatrikkel(
+        item.kommunenummer,
+        item.gardsnummer,
+        item.bruksnummer,
+        {
+          adresse: item.adressetekst,
+          lat: item.lat,
+          lng: item.lng,
+        }
+      );
+
+      await applyPropertyLookupResult(data);
+    } catch (e) {
+      setPropertyError(
+        e instanceof Error ? e.message : "Kunne ikke slå opp valgt adresse."
+      );
+    } finally {
+      setMatrikkelLoading(false);
+    }
+  }
+
   function handleReset() {
     resetForm();
     resetProperty();
     resetTerrain();
     setStationSortOrigin(null);
+    setAddressSearch("");
+    setAddressResults([]);
+    setAddressDropdownOpen(false);
     setValidationErrors({});
     setPdfError("");
   }
@@ -524,7 +638,16 @@ export default function HomePage({
     propertyAddress,
     propertyMatrikkel,
     propertyError,
-    propertyLoading,
+    propertyLoading: propertyLoading || matrikkelLoading,
+    propertyLookupMode,
+    setPropertyLookupMode,
+    addressSearch,
+    setAddressSearch,
+    addressResults,
+    addressLoading,
+    addressDropdownOpen,
+    setAddressDropdownOpen,
+    handleAddressSelect,
     weatherStations: sortedWeatherStations,
     selectedStationId,
     setSelectedStationId,
