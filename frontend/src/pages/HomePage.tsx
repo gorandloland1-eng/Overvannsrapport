@@ -190,6 +190,11 @@ export default function HomePage({
   const [rightPanelView, setRightPanelView] = useState<RightPanelView>("map");
   const [mobileTab, setMobileTab] = useState<MobileTab>("map");
   const [mapLayer, setMapLayer] = useState<MapLayer>("kart");
+  const [isDesktopViewport, setIsDesktopViewport] = useState(() =>
+    typeof window === "undefined"
+      ? true
+      : window.matchMedia("(min-width: 1280px)").matches
+  );
 
   const [weatherStations, setWeatherStations] = useState<WeatherStation[]>([]);
   const [selectedStationId, setSelectedStationId] = useState("");
@@ -334,6 +339,16 @@ export default function HomePage({
 
     return () => clearTimeout(timeout);
   }, [mobileTab, rightPanelView]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1280px)");
+    const update = () => setIsDesktopViewport(media.matches);
+
+    update();
+    media.addEventListener("change", update);
+
+    return () => media.removeEventListener("change", update);
+  }, []);
 
   function validate(): ValidationErrors {
     const errors: ValidationErrors = {};
@@ -543,7 +558,7 @@ export default function HomePage({
     setPdfError("");
   }
 
-  function handleTryGenerate() {
+  async function handleTryGenerate() {
     const errors = validate();
 
     if (Object.keys(errors).length > 0) {
@@ -552,6 +567,14 @@ export default function HomePage({
     }
 
     setValidationErrors({});
+    setRightPanelView("map");
+    setMobileTab("map");
+
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    mapRef.current?.invalidateSize?.({ pan: false });
+    await new Promise((resolve) => setTimeout(resolve, 250));
+
     handleGeneratePdf(pdfOptions);
   }
 
@@ -568,7 +591,14 @@ export default function HomePage({
   const pdfOptions = {
     userId: user?.uid,
     mapRef,
+    isDesktopViewport,
+    mapLayer,
     setMapLayer,
+    propertyBoundary,
+    pointA,
+    pointB,
+    mouseCoord,
+    clickedCoord,
     projectName: form.projectName,
     elev1,
     elev2,
@@ -753,7 +783,7 @@ export default function HomePage({
                   : "hidden"
               }
             >
-              <PropertyMap {...mapProps} />
+              {isDesktopViewport && <PropertyMap {...mapProps} />}
             </div>
 
             <div
@@ -787,7 +817,7 @@ export default function HomePage({
                   : "pointer-events-none z-0 opacity-0"
               }`}
             >
-              <PropertyMap {...mapProps} />
+              {!isDesktopViewport && <PropertyMap {...mapProps} />}
             </div>
 
             {mobileTab === "ivf" && (

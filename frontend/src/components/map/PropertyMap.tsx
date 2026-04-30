@@ -95,13 +95,13 @@ function MapLayerToggle({ layer, onChange }) {
   return (
     <div ref={ref} className="absolute right-3 top-1/2 z-[1000] flex -translate-y-1/2 flex-col gap-2 rounded-xl bg-white/35 p-2 backdrop-blur-sm dark:bg-slate-900/30">
       <button type="button" onClick={() => onChange("kart")} className={`h-14 w-16 overflow-hidden rounded-lg border-2 shadow transition ${layer === "kart" ? "border-black ring-2 ring-white/90" : "border-gray-600 bg-white/85 opacity-90 hover:opacity-100"}`} title="Kart">
-        <img src="https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/12/1164/2154.png" alt="Kartlag" className="h-full w-full object-cover" />
+        <img crossOrigin="anonymous" src="https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/12/1164/2154.png" alt="Kartlag" className="h-full w-full object-cover" />
       </button>
       <button type="button" onClick={() => onChange("terreng")} className={`h-14 w-16 overflow-hidden rounded-lg border-2 shadow transition ${layer === "terreng" ? "border-black ring-2 ring-white/90" : "border-gray-600 bg-white/85 opacity-90 hover:opacity-100"}`} title="Terreng">
-        <img src="https://cache.kartverket.no/v1/wmts/1.0.0/toporaster/default/webmercator/12/1164/2154.png" alt="Terrenglag" className="h-full w-full object-cover" />
+        <img crossOrigin="anonymous" src="https://cache.kartverket.no/v1/wmts/1.0.0/toporaster/default/webmercator/12/1164/2154.png" alt="Terrenglag" className="h-full w-full object-cover" />
       </button>
       <button type="button" onClick={() => onChange("satellitt")} className={`h-14 w-16 overflow-hidden rounded-lg border-2 shadow transition ${layer === "satellitt" ? "border-black ring-2 ring-white/90" : "border-gray-600 bg-white/85 opacity-90 hover:opacity-100"}`} title="Satellitt">
-        <img src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/12/1164/2154" alt="Satellittlag" className="h-full w-full object-cover" />
+        <img crossOrigin="anonymous" src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/12/1164/2154" alt="Satellittlag" className="h-full w-full object-cover" />
       </button>
     </div>
   );
@@ -224,17 +224,26 @@ export default function PropertyMap({
         <MapScale />
 
         {mapLayer === "kart" && (
-          <TileLayer attribution="© Kartverket (CC BY 4.0)" url="https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png" maxZoom={20} maxNativeZoom={18} />
+          <TileLayer attribution="© Kartverket (CC BY 4.0)" url="https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png" maxZoom={20} maxNativeZoom={18} crossOrigin="anonymous" />
         )}
         {mapLayer === "terreng" && (
-          <TileLayer attribution="© Kartverket (CC BY 4.0)" url="https://cache.kartverket.no/v1/wmts/1.0.0/toporaster/default/webmercator/{z}/{y}/{x}.png" maxZoom={20} maxNativeZoom={18} />
+          <TileLayer attribution="© Kartverket (CC BY 4.0)" url="https://cache.kartverket.no/v1/wmts/1.0.0/toporaster/default/webmercator/{z}/{y}/{x}.png" maxZoom={20} maxNativeZoom={18} crossOrigin="anonymous" />
         )}
         {mapLayer === "satellitt" && (
-          <TileLayer attribution="© Esri" url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" maxZoom={20} maxNativeZoom={18} />
+          <TileLayer attribution="© Esri" url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" maxZoom={20} maxNativeZoom={18} crossOrigin="anonymous" />
         )}
 
         {propertyBoundary?.features?.length > 0 && (
-          <GeoJSON key={boundaryKey} data={propertyBoundary} style={{ color: "#f59e0b", weight: 3, fillOpacity: 0.5, fillColor: "#f59e0b" }} />
+          <GeoJSON
+            key={boundaryKey}
+            data={propertyBoundary}
+            style={{
+              color: "#f59e0b",
+              weight: 3,
+              fillOpacity: 0.5,
+              fillColor: "#f59e0b",
+            }}
+          />
         )}
         {pointA?.lat != null && pointA?.lng != null && (
           <CircleMarker center={[pointA.lat, pointA.lng]} radius={7} />

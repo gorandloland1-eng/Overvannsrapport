@@ -112,9 +112,16 @@ export async function uploadMapScreenshotToFirebase(
   projectName: string,
   filename: string
 ): Promise<string> {
+  if (blob.size === 0) {
+    throw new Error(`Kartbildet "${filename}" er 0 bytes og ble ikke lastet opp.`);
+  }
+
   const safeName = projectName.trim().replace(/[^a-zA-Z0-9_\-]/g, "_") || "unknown";
   const storageRef = ref(storage, `rapporter/${safeName}/screenshots/${filename}`);
-  await uploadBytes(storageRef, blob);
+  await uploadBytes(storageRef, blob, {
+    contentType: "image/png",
+    cacheControl: "public,max-age=3600",
+  });
   return getDownloadURL(storageRef);
 }
 
