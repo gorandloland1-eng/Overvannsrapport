@@ -36,6 +36,15 @@ export default function Sidebar(props) {
             cadastralNumber: errors.cadastralNumber,
             propertyNumber: errors.propertyNumber,
           }}
+          lookupMode={props.propertyLookupMode}
+          setLookupMode={props.setPropertyLookupMode}
+          addressSearch={props.addressSearch}
+          setAddressSearch={props.setAddressSearch}
+          addressResults={props.addressResults}
+          addressLoading={props.addressLoading}
+          addressDropdownOpen={props.addressDropdownOpen}
+          setAddressDropdownOpen={props.setAddressDropdownOpen}
+          onAddressSelect={props.handleAddressSelect}
         />
 
         <StationSection
