@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import type { AddressSearchResult } from "../../api/property";
 
 type Props = {
@@ -203,17 +203,17 @@ export default function PropertySection({
             }}
             onFocus={() => setAddressDropdownOpen(true)}
             placeholder="Søk etter adresse..."
-            className="h-12 w-full rounded-[22px] border border-slate-200 bg-white px-5 pr-12 text-base text-slate-900 outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:ring-slate-700"
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 pr-10 text-sm text-slate-900 outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:ring-slate-700"
           />
 
           <button
             type="button"
             onClick={() => setAddressDropdownOpen(!addressDropdownOpen)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-700 dark:text-slate-200"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-700 dark:text-slate-200"
             aria-label="Åpne adresseforslag"
           >
             <ChevronDown
-              size={20}
+              size={18}
               strokeWidth={2.2}
               className={`transition-transform ${
                 addressDropdownOpen ? "rotate-180" : ""
@@ -282,7 +282,7 @@ export default function PropertySection({
                 inputMode="numeric"
                 pattern="[0-9]*"
                 autoFocus
-                className={`h-10 w-full rounded-xl border bg-white px-3 pr-24 text-sm outline-none focus:ring-4 dark:bg-slate-900 dark:text-slate-100 ${
+                className={`h-10 w-full rounded-xl border bg-white px-3 pr-10 text-sm outline-none focus:ring-4 dark:bg-slate-900 dark:text-slate-100 ${
                   currentStepError
                     ? "border-red-400 focus:border-red-400 focus:ring-red-100 dark:border-red-500 dark:focus:ring-red-900/30"
                     : "border-slate-200 focus:border-slate-300 focus:ring-slate-200 dark:border-slate-700 dark:focus:ring-slate-700"
@@ -294,9 +294,10 @@ export default function PropertySection({
                   type="button"
                   onClick={() => confirm(inputValue)}
                   tabIndex={-1}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
+                  className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center text-slate-700 transition hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
+                  aria-label="Neste felt"
                 >
-                  Neste →
+                  <ChevronRight size={18} strokeWidth={2.2} />
                 </button>
               )}
             </div>
