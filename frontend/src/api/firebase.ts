@@ -23,6 +23,10 @@ export interface PdfReportData {
     returnPeriod: string;
     climateFactor: string;
     maxDischarge: string;
+    runoffCoefficient?: string;
+    runoffAfterCoefficient?: string;
+    runoffAfterDischarge?: string;
+    runoffAdditionalDischarge?: string;
     elevation: number | null;
     length: number | null;
     concentrationTime: number | null;

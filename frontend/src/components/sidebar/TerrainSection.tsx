@@ -13,9 +13,9 @@ type Props = {
   };
 };
 
-function formatMeters(value?: number | null) {
+function formatMeters(value?: number | null, decimals = 1) {
   if (value == null) return "";
-  return `${value.toFixed(1)} m`;
+  return `${value.toFixed(decimals)} m`;
 }
 
 function formatMinutes(value?: number | null) {
@@ -55,7 +55,7 @@ export default function TerrainSection({
           </label>
           <input
             className="h-10 w-full rounded-xl border border-slate-200 bg-slate-100 px-3 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-            value={loading ? "Henter..." : formatMeters(elev1)}
+            value={loading ? "Henter..." : formatMeters(elev1, 2)}
             readOnly
           />
         </div>
@@ -66,7 +66,7 @@ export default function TerrainSection({
           </label>
           <input
             className="h-10 w-full rounded-xl border border-slate-200 bg-slate-100 px-3 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-            value={loading ? "Henter..." : formatMeters(elev2)}
+            value={loading ? "Henter..." : formatMeters(elev2, 2)}
             readOnly
           />
         </div>
@@ -95,7 +95,7 @@ export default function TerrainSection({
           <div className="grid gap-2">
             <div className="flex items-center justify-between gap-4">
               <span className="text-slate-500 dark:text-slate-400">Høydeforskjell</span>
-              <span className="font-semibold text-slate-800 dark:text-slate-100">{formatMeters(heightDifference)}</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-100">{formatMeters(heightDifference, 2)}</span>
             </div>
             <div className="flex items-center justify-between gap-4">
               <span className="text-slate-500 dark:text-slate-400">Lengdeforskjell</span>
