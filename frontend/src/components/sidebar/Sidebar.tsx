@@ -107,6 +107,7 @@ export default function Sidebar(props) {
             area: errors.area,
             climateFactor: errors.climateFactor,
           }}
+          formValid={props.formValid}
         />
       </div>
     </aside>

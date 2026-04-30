@@ -9,6 +9,7 @@ type Props = {
     area?: string;
     climateFactor?: string;
   };
+  formValid?: boolean;
 };
 
 export default function CalculationSection({
@@ -19,6 +20,7 @@ export default function CalculationSection({
   error,
   onReset,
   validationErrors = {},
+  formValid = false,
 }: Props) {
   const areaError = validationErrors.area && (!form.area || Number(form.area) <= 0);
   const climateError = validationErrors.climateFactor && (!form.climateFactor || Number(form.climateFactor) <= 0);
@@ -80,8 +82,8 @@ export default function CalculationSection({
         <button
           type="button"
           onClick={onGenerate}
-          disabled={loading}
-          className="h-14 w-full rounded-[16px] bg-[#213F53] text-base font-semibold text-white transition hover:bg-[#1a3244] disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={loading || !formValid}
+          className="h-14 w-full rounded-[16px] bg-[#213F53] text-base font-semibold text-white transition hover:bg-[#1a3244] disabled:cursor-not-allowed disabled:opacity-40"
         >
           {loading ? "Genererer PDF..." : "Generer PDF"}
         </button>

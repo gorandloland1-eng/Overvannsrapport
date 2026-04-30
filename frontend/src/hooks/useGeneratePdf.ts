@@ -53,9 +53,12 @@ async function captureLayerAsBlob(
       try {
         const canvas = await html2canvas(container, {
           useCORS: true,
-          allowTaint: false,
+          allowTaint: true,        // <-- bytt fra false til true
           scale: 1,
           logging: false,
+          backgroundColor: "#ffffff",
+          ignoreElements: (el) =>
+            el.classList.contains("leaflet-control-container"),
         });
         canvas.toBlob((blob) => resolve(blob ?? null), "image/png");
       } catch (e) {

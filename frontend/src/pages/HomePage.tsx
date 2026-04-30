@@ -376,13 +376,9 @@ export default function HomePage({
     }
 
     if (form.infiltrationMethod === "soiltype") {
-      if (!form.selectedSoilType) {
-        errors.infiltration = "Velg jordtype";
-      } else if (!form.bottomArea || !form.sideArea) {
-        errors.infiltration = "Fyll ut A_bunn og A_sideflate";
-      }
+      if (!form.selectedSoilType) errors.infiltration = "Velg jordtype";
+      else if (!form.bottomArea || !form.sideArea) errors.infiltration = "Fyll ut A_bunn og A_sideflate";
     }
-
     return errors;
   }
 
@@ -414,7 +410,6 @@ export default function HomePage({
         setHeightDifference(data.hoydeforskjell_m);
         setLength(data.lengde_m);
         setConcentrationTime(data.konsentrasjonstid_ivf_min);
-
         setValidationErrors((prev) => ({
           ...prev,
           heightDifference: undefined,
@@ -643,6 +638,7 @@ export default function HomePage({
     pdfError,
     handleReset,
     validationErrors,
+    formValid: isFormValid(),
   };
 
   const mapProps = {
