@@ -112,13 +112,15 @@ export function useGeneratePdf() {
         opts.setMapLayer("kart");
       }
 
+      const areaM2 = Number(opts.area) * 10000;
+
       // --- Generate PDFs ---
       const response = await generatePdf({
         project_name: opts.projectName,
         height: opts.elevation ?? 0,
         length: opts.length ?? 0,
         time_of_concentration: opts.concentrationTime ?? 0,
-        areal: Number(opts.area),
+        areal: areaM2,
         returperiode: Number(opts.returnPeriod),
         klimafaktor: Number(opts.climateFactor),
         maks_paslipp: Number(opts.maxDischarge),

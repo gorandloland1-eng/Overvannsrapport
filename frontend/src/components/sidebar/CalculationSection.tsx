@@ -60,13 +60,14 @@ export default function CalculationSection({
         {/* Areal */}
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-            Areal
+            Areal (ha)
           </label>
           <input
             type="number"
+            step="0.0001"
             value={form.area}
             onChange={(e) => setField("area", e.target.value)}
-            placeholder="200"
+            placeholder="0.0000"
             className={`h-12 w-full rounded-[22px] border bg-white px-5 text-base text-slate-900 outline-none focus:ring-4 dark:bg-slate-900 dark:text-slate-100 ${
               areaError
                 ? "border-red-400 focus:border-red-400 focus:ring-red-100 dark:border-red-500 dark:focus:ring-red-900/30"

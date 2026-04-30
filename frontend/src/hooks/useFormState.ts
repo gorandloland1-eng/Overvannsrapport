@@ -2,7 +2,7 @@ import { useState } from "react";
 
 export const defaultFormState = {
   projectName: "",
-  area: "200",
+  area: "",
   returnPeriod: "5",
   climateFactor: "1.0",
   maxDischarge: "0.0",

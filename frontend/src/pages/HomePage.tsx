@@ -18,6 +18,7 @@ import { useFormState } from "../hooks/useFormState";
 import { usePropertyState } from "../hooks/usePropertyState";
 import { useTerrainState } from "../hooks/useTerrainState";
 import { useGeneratePdf } from "../hooks/useGeneratePdf";
+import { geoJsonAreaM2 } from "../utils/geoArea";
 
 type MobileTab = "map" | "ivf" | "sidebar";
 type RightPanelView = "map" | "ivf";
@@ -62,6 +63,10 @@ function findNearestStation(
       }))
       .sort((a, b) => a.distance - b.distance)[0]?.station ?? null
   );
+}
+
+function formatAreaHa(areaM2: number) {
+  return (areaM2 / 10000).toFixed(4).replace(/\.?0+$/, "");
 }
 
 export default function HomePage({
@@ -192,7 +197,7 @@ export default function HomePage({
       errors.concentrationTime = "Konsentrasjonstid mangler";
     }
     if (!form.area || Number(form.area) <= 0) {
-      errors.area = "Areal må være større enn 0";
+      errors.area = "Areal må være større enn 0 ha";
     }
     if (!form.climateFactor || Number(form.climateFactor) <= 0) {
       errors.climateFactor = "Klimafaktor må være større enn 0";
@@ -273,6 +278,11 @@ export default function HomePage({
         kommunenummer: data.kommunenummer,
       });
 
+      const propertyAreaM2 = geoJsonAreaM2(data.polygon);
+      if (propertyAreaM2) {
+        setField("area", formatAreaHa(propertyAreaM2));
+      }
+
       const nearestStation = findNearestStation(data.centroid, weatherStations);
       if (nearestStation) {
         setSelectedStationId(nearestStation.id);
@@ -290,6 +300,7 @@ export default function HomePage({
         municipalityNumber: undefined,
         cadastralNumber: undefined,
         propertyNumber: undefined,
+        area: propertyAreaM2 ? undefined : prev.area,
       }));
     } catch (e) {
       setPropertyError(e instanceof Error ? e.message : "Could not look up property.");
