@@ -5,6 +5,8 @@ export type WeatherStation = {
   name: string;
   municipality?: string;
   county?: string;
+  lat?: number | null;
+  lon?: number | null;
 };
 
 export type IvfResponse = {
