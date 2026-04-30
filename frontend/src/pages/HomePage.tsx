@@ -444,12 +444,18 @@ export default function HomePage({
             <div className="absolute left-16 top-3 z-[2000]">
               <PanelToggle />
             </div>
-            <div className={rightPanelView === "map" ? "h-full min-h-0 w-full min-w-0" : "hidden"}>
+
+            {/* Kartet er alltid synlig med full størrelse */}
+            <div className="h-full min-h-0 w-full min-w-0">
               <PropertyMap {...mapProps} />
             </div>
-            <div className={rightPanelView === "ivf" ? "h-full min-h-0 w-full overflow-auto" : "hidden"}>
-              <IvfPanel {...ivfPanelProps} />
-            </div>
+
+            {/* IVF-panel legges oppå kartet */}
+            {rightPanelView === "ivf" && (
+              <div className="absolute inset-0 z-[1500] overflow-auto bg-white dark:bg-slate-950">
+                <IvfPanel {...ivfPanelProps} />
+              </div>
+            )}
           </section>
         </div>
 
