@@ -382,6 +382,10 @@ export default function HomePage({
     return errors;
   }
 
+  function isFormValid() {
+    return Object.keys(validate()).length === 0;
+  }
+
   function clearTerrainResult() {
     setElev1(null);
     setElev2(null);
