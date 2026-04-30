@@ -47,7 +47,8 @@ export default function Sidebar(props) {
           setSearch={props.setStationSearch}
           dropdownOpen={props.stationDropdownOpen}
           setDropdownOpen={props.setStationDropdownOpen}
-          stationBoxRef={props.stationBoxRef}
+          favoriteStationIds={props.favoriteStationIds}
+          toggleFavoriteStation={props.toggleFavoriteStation}
           error={errors.selectedStationId}
         />
 
