@@ -4,6 +4,7 @@ import { generatePdf } from "../api/pdf";
 import { savePdfReport, uploadMapScreenshotToFirebase } from "../api/firebase";
 import type { WeatherStation } from "../api/ivf";
 
+
 interface GeneratePdfOptions {
   userId: string;
   mapRef: React.MutableRefObject<any>;
@@ -41,28 +42,52 @@ const MAP_LAYERS: Array<{
   { key: "satellitt", filename: "satellitt.png" },
 ];
 
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function captureLayerAsBlob(
   container: HTMLElement,
   setMapLayer: (layer: "kart" | "terreng" | "satellitt") => void,
+  mapRef: React.MutableRefObject<any>,
   layerKey: "kart" | "terreng" | "satellitt",
   delayMs = 2500
 ): Promise<Blob | null> {
   return new Promise((resolve) => {
+    // Lagre posisjon FØR lagbytte
+    const center = mapRef.current?.getCenter?.();
+    const zoom = mapRef.current?.getZoom?.();
+
     setMapLayer(layerKey);
+
     setTimeout(async () => {
+      try {
+        // Gjenopprett posisjon uten animasjon
+        mapRef.current?.invalidateSize?.({ pan: false, animate: false });
+        if (center && zoom !== undefined) {
+          mapRef.current?.setView?.(center, zoom, { animate: false, duration: 0 });
+        }
+      } catch {}
+
+      await wait(500);
+
       try {
         const canvas = await html2canvas(container, {
           useCORS: true,
-          allowTaint: true,        // <-- bytt fra false til true
+          allowTaint: true,
           scale: 1,
           logging: false,
           backgroundColor: "#ffffff",
           ignoreElements: (el) =>
             el.classList.contains("leaflet-control-container"),
         });
-        canvas.toBlob((blob) => resolve(blob ?? null), "image/png");
+
+        console.log(`[Screenshot] Canvas ${layerKey}: ${canvas.width}x${canvas.height}`);
+        canvas.toBlob((blob) => {
+          resolve(blob ?? null);
+        }, "image/png");
       } catch (e) {
-        console.warn(`html2canvas-pro feilet for lag "${layerKey}":`, e);
+        console.warn(`[Screenshot] Feilet for "${layerKey}":`, e);
         resolve(null);
       }
     }, delayMs);
@@ -102,21 +127,43 @@ export function useGeneratePdf() {
       const screenshotUrls: { kart?: string; terreng?: string; satellitt?: string } = {};
       const mapImageUrls: string[] = [];
 
-      if (opts.mapRef.current) {
-        const container: HTMLElement = opts.mapRef.current.getContainer();
+      // Hent leaflet-container direkte fra DOM – har alltid riktige dimensjoner
+      const container = document.querySelector(".leaflet-container") as HTMLElement | null;
+
+      if (container) {
+        console.log(`[Screenshot] leaflet-container: ${container.offsetWidth}x${container.offsetHeight}`);
+
         for (const layer of MAP_LAYERS) {
           try {
-            const blob = await captureLayerAsBlob(container, opts.setMapLayer, layer.key);
+            console.log(`[Screenshot] Capture ${layer.key}...`);
+            const blob = await captureLayerAsBlob(
+              container,
+              opts.setMapLayer,
+              opts.mapRef,
+              layer.key
+            );
+
             if (blob) {
-              const url = await uploadMapScreenshotToFirebase(blob, opts.projectName, layer.filename);
+              const url = await uploadMapScreenshotToFirebase(
+                blob,
+                opts.projectName,
+                layer.filename
+              );
+              console.log(`[Screenshot] Lastet opp ${layer.key}:`, url);
               screenshotUrls[layer.key] = url;
               mapImageUrls.push(url);
+            } else {
+              console.warn(`[Screenshot] Blob null for ${layer.key}`);
             }
           } catch (e) {
-            console.warn(`Screenshot feilet for ${layer.key}:`, e);
+            console.error(`[Screenshot] Feil for ${layer.key}:`, e);
           }
         }
+
         opts.setMapLayer("kart");
+        console.log("[Screenshot] Ferdig. mapImageUrls:", mapImageUrls);
+      } else {
+        console.warn("[Screenshot] Fant ikke .leaflet-container i DOM");
       }
 
       const areaM2 = Number(opts.area) * 10000;
@@ -168,8 +215,10 @@ export function useGeneratePdf() {
         },
       });
 
+      console.log("[PDF] Ferdig. mapImageUrls:", mapImageUrls);
       setPdfSuccess(true);
     } catch (e) {
+      console.error("[PDF] Feil:", e);
       setPdfError(
         e instanceof Error ? e.message : "Noe gikk galt under generering av PDF"
       );
