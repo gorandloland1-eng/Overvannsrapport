@@ -437,6 +437,11 @@ export default function HomePage({
       kommunenummer: data.kommunenummer,
     });
 
+    const propertyAreaM2 = geoJsonAreaM2(data.polygon);
+    if (propertyAreaM2) {
+      setField("area", formatAreaHa(propertyAreaM2));
+    }
+
     if (data.centroid) {
       setStationSortOrigin(data.centroid);
 
@@ -461,6 +466,7 @@ export default function HomePage({
       cadastralNumber: undefined,
       propertyNumber: undefined,
       selectedStationId: undefined,
+      area: propertyAreaM2 ? undefined : prev.area,
     }));
   }
 
@@ -480,40 +486,7 @@ export default function HomePage({
         Number(propertyNumber)
       );
 
-      setPropertyAddress(data.adresse ?? null);
-      setPropertyBoundary(data.polygon ?? null);
-      setPropertyMatrikkel({
-        gnr: data.gardsnummer,
-        bnr: data.bruksnummer,
-        kommunenummer: data.kommunenummer,
-      });
-
-      const propertyAreaM2 = geoJsonAreaM2(data.polygon);
-      if (propertyAreaM2) {
-        setField("area", formatAreaHa(propertyAreaM2));
-      }
-
-      const nearestStation = findNearestStation(data.centroid, weatherStations);
-      if (nearestStation) {
-        setSelectedStationId(nearestStation.id);
-        setStationSearch("");
-        setStationDropdownOpen(false);
-      }
-
-      setRightPanelView("map");
-      setMobileTab("map");
-
-      if (data.warnings?.length > 0) {
-        setPropertyError(data.warnings.join(" "));
-      }
-
-      setValidationErrors((prev) => ({
-        ...prev,
-        municipalityNumber: undefined,
-        cadastralNumber: undefined,
-        propertyNumber: undefined,
-        area: propertyAreaM2 ? undefined : prev.area,
-      }));
+      await applyPropertyLookupResult(data);
     } catch (e) {
       setPropertyError(
         e instanceof Error ? e.message : "Could not look up property."
