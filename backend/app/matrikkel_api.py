@@ -13,7 +13,7 @@ TIMEOUT = float(os.getenv("GEONORGE_TIMEOUT_SECONDS", "10"))
 
 GEONORGE_WFS_URL = "https://wfs.geonorge.no/skwms1/wfs.matrikkelen-eiendomskart-teig"
 GEONORGE_ADRESSE_URL = "https://ws.geonorge.no/adresser/v1/sok"
-GEONORGE_ADRESSE_PUNKT_URL = "https://ws.geonorge.no/adresser/v1/punkt"
+GEONORGE_ADRESSE_PUNKT_URL = "https://ws.geonorge.no/adresser/v1/punktsok"
 
 APP_NS = "http://skjema.geonorge.no/SOSI/produktspesifikasjon/Matrikkelen-Eiendomskart-Teig/20211101"
 GML_NS = "http://www.opengis.net/gml/3.2"
@@ -254,6 +254,16 @@ def _hent_adresse_med_koordinat(knr: str, gnr: int, bnr: int) -> tuple[str | Non
             "utkoordsys": 4326,
         },
     )
+    if not data or not data.get("adresser"):
+        data = _safe_get_json(
+            GEONORGE_ADRESSE_URL,
+            params={
+                "sok": f"{gnr}/{bnr}",
+                "kommunenummer": knr,
+                "treffPerSide": 1,
+                "utkoordsys": 4326,
+            },
+        )
     if not data:
         return None, None, None
     adresser = data.get("adresser", [])
@@ -348,10 +358,11 @@ def eiendom_for_punkt(lat: float, lng: float, radius: int = 50) -> EiendomPunktR
     adresse_data = _safe_get_json(
         GEONORGE_ADRESSE_PUNKT_URL,
         params={
-            "nord": lat,
-            "ost": lng,
-            "koordsys": 4326,
+            "lat": lat,
+            "lon": lng,
             "radius": radius,
+            "treffPerSide": 1,
+            "side": 0,
             "utkoordsys": 4326,
         },
     )
