@@ -125,19 +125,6 @@ export default function CalculationSection({
           />
         </div>
 
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-            Maks avrenning
-          </label>
-          <input
-            type="number"
-            step="0.1"
-            value={form.maxDischarge}
-            onChange={(e) => setField("maxDischarge", e.target.value)}
-            placeholder="0.0"
-            className="h-12 w-full rounded-[22px] border border-slate-200 bg-white px-5 text-base text-slate-900 outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
-          />
-        </div>
       </div>
 
       {error && (

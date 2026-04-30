@@ -3,6 +3,7 @@ import ProjectSection from "./ProjectSection";
 import PropertySection from "./PropertySection";
 import StationSection from "./StationSection";
 import TerrainSection from "./TerrainSection";
+import RunoffCoefficientSection from "./RunoffCoefficientSection";
 import InfiltrationSection from "./InfiltrationSection";
 import CalculationSection from "./CalculationSection";
 
@@ -50,6 +51,13 @@ export default function Sidebar(props) {
           loading={props.terrainLoading}
           error={props.terrainError}
           propertyLoading={props.propertyLoading}
+        />
+
+        <RunoffCoefficientSection
+          form={props.form}
+          setField={props.setField}
+          ivfData={props.ivfData}
+          concentrationTime={props.concentrationTime}
         />
 
         <InfiltrationSection

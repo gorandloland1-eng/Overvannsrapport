@@ -17,6 +17,10 @@ interface GeneratePdfOptions {
   returnPeriod: string;
   climateFactor: string;
   maxDischarge: string;
+  runoffCoefficient?: string;
+  runoffAfterCoefficient?: string;
+  runoffAfterDischarge?: string;
+  runoffAdditionalDischarge?: string;
   infiltrationMethod: "direct" | "soiltype";
   manualQInf: string;
   selectedSoilType: string;
@@ -149,7 +153,7 @@ export function useGeneratePdf() {
         eiendom_adresse: opts.propertyAddress,
         eiendom_gnr: opts.propertyMatrikkel?.gnr ?? null,
         eiendom_bnr: opts.propertyMatrikkel?.bnr ?? null,
-        phi: 0.9,
+        phi: Number(opts.runoffCoefficient || 0.9),
         selected_weather_station: opts.selectedStationId,
         selected_weather_station_name: opts.selectedStation?.name ?? "",
       });
@@ -167,6 +171,10 @@ export function useGeneratePdf() {
           returnPeriod: opts.returnPeriod,
           climateFactor: opts.climateFactor,
           maxDischarge: opts.maxDischarge,
+          runoffCoefficient: opts.runoffCoefficient ?? "",
+          runoffAfterCoefficient: opts.runoffAfterCoefficient ?? "",
+          runoffAfterDischarge: opts.runoffAfterDischarge ?? "",
+          runoffAdditionalDischarge: opts.runoffAdditionalDischarge ?? "",
           elevation: opts.elevation,
           length: opts.length,
           concentrationTime: opts.concentrationTime,

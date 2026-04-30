@@ -316,6 +316,10 @@ export default function HomePage({
     returnPeriod: form.returnPeriod,
     climateFactor: form.climateFactor,
     maxDischarge: form.maxDischarge,
+    runoffCoefficient: form.runoffCoefficient,
+    runoffAfterCoefficient: form.runoffAfterCoefficient,
+    runoffAfterDischarge: form.runoffAfterDischarge,
+    runoffAdditionalDischarge: form.runoffAdditionalDischarge,
     infiltrationMethod: form.infiltrationMethod,
     manualQInf: form.manualQInf,
     selectedSoilType: form.selectedSoilType,
@@ -352,6 +356,7 @@ export default function HomePage({
     setStationSearch,
     stationDropdownOpen,
     setStationDropdownOpen,
+    ivfData,
 
     elev1,
     elev2,
