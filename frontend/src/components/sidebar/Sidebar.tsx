@@ -2,6 +2,7 @@
 import ProjectSection from "./ProjectSection";
 import PropertySection from "./PropertySection";
 import StationSection from "./StationSection";
+import ReturnPeriodSection from "./ReturnPeriodSection";
 import TerrainSection from "./TerrainSection";
 import RunoffCoefficientSection from "./RunoffCoefficientSection";
 import InfiltrationSection from "./InfiltrationSection";
@@ -59,6 +60,11 @@ export default function Sidebar(props) {
           favoriteStationIds={props.favoriteStationIds}
           toggleFavoriteStation={props.toggleFavoriteStation}
           error={errors.selectedStationId}
+        />
+
+        <ReturnPeriodSection
+          value={props.form.returnPeriod}
+          setField={props.setField}
         />
 
         <TerrainSection
