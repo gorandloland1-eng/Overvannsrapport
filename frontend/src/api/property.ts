@@ -19,6 +19,17 @@ export type PropertyPointResponse = {
   warnings: string[];
 };
 
+export type AddressSearchResult = {
+  id: string;
+  adressetekst: string;
+  kommunenummer: string;
+  kommunenavn?: string | null;
+  gardsnummer: number;
+  bruksnummer: number;
+  lat?: number | null;
+  lng?: number | null;
+};
+
 export async function fetchPropertyByMatrikkel(
   municipalityNumber: string,
   cadastralNumber: number,
@@ -33,7 +44,25 @@ export async function fetchPropertyByMatrikkel(
       bruksnummer: propertyNumber,
     }),
   });
-  if (!res.ok) throw new Error((await res.text()) || "Kunne ikke slå opp eiendom");
+
+  if (!res.ok) {
+    throw new Error((await res.text()) || "Kunne ikke slå opp eiendom");
+  }
+
+  return res.json();
+}
+
+export async function fetchAddressSearch(
+  query: string
+): Promise<AddressSearchResult[]> {
+  const res = await fetch(
+    `${BASE}/v1/eiendom/adresse/sok?q=${encodeURIComponent(query)}`
+  );
+
+  if (!res.ok) {
+    throw new Error((await res.text()) || "Kunne ikke søke etter adresse");
+  }
+
   return res.json();
 }
 
@@ -45,6 +74,10 @@ export async function fetchPropertyByPoint(
   const res = await fetch(
     `${BASE}/v1/eiendom/punkt?lat=${lat}&lng=${lng}&radius=${radius}`
   );
-  if (!res.ok) throw new Error((await res.text()) || "Kunne ikke hente eiendomsdata");
+
+  if (!res.ok) {
+    throw new Error((await res.text()) || "Kunne ikke hente eiendomsdata");
+  }
+
   return res.json();
 }

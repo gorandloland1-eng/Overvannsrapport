@@ -1,21 +1,25 @@
 // @ts-nocheck
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useAuth } from "../auth/AuthProvider";
+import { db } from "../firebase";
 import { Map, Table2, SlidersHorizontal } from "lucide-react";
 
-// --- API --- //
-import { fetchPropertyByMatrikkel } from "../api/property";
+import {
+  fetchPropertyByMatrikkel,
+  fetchAddressSearch,
+} from "../api/property";
+import type { AddressSearchResult } from "../api/property";
 import { fetchTerrain } from "../api/terrain";
 import { fetchWeatherStations, fetchIvfData } from "../api/ivf";
 import type { IvfResponse, WeatherStation } from "../api/ivf";
 
-// --- Components --- //
 import Header from "../components/layout/Header";
 import PropertyMap from "../components/map/PropertyMap";
 import IvfPanel from "../components/map/IvfPanel";
 import Sidebar from "../components/sidebar/Sidebar";
 
-// --- Custom hooks --- //
 import { useFormState } from "../hooks/useFormState";
 import { usePropertyState } from "../hooks/usePropertyState";
 import { useTerrainState } from "../hooks/useTerrainState";
@@ -25,11 +29,23 @@ type MobileTab = "map" | "ivf" | "sidebar";
 type RightPanelView = "map" | "ivf";
 type MapLayer = "kart" | "terreng" | "satellitt";
 
+export type ValidationErrors = {
+  projectName?: string;
+  municipalityNumber?: string;
+  cadastralNumber?: string;
+  propertyNumber?: string;
+  selectedStationId?: string;
+  heightDifference?: string;
+  concentrationTime?: string;
+  area?: string;
+  climateFactor?: string;
+  infiltration?: string;
+};
+
 function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number) {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLng = ((lng2 - lng1) * Math.PI) / 180;
-
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos((lat1 * Math.PI) / 180) *
@@ -37,6 +53,41 @@ function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number) {
       Math.sin(dLng / 2) ** 2;
 
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function sortStationsByDistance(
+  origin: { lat: number; lng: number } | null,
+  stations: WeatherStation[]
+) {
+  if (!origin) return stations;
+
+  return [...stations].sort((a, b) => {
+    const aHasCoords = a.lat != null && a.lon != null;
+    const bHasCoords = b.lat != null && b.lon != null;
+
+    if (!aHasCoords && !bHasCoords) {
+      return a.name.localeCompare(b.name, "no");
+    }
+
+    if (!aHasCoords) return 1;
+    if (!bHasCoords) return -1;
+
+    const aDistance = distanceKm(
+      origin.lat,
+      origin.lng,
+      Number(a.lat),
+      Number(a.lon)
+    );
+
+    const bDistance = distanceKm(
+      origin.lat,
+      origin.lng,
+      Number(b.lat),
+      Number(b.lon)
+    );
+
+    return aDistance - bDistance;
+  });
 }
 
 function findNearestStation(
@@ -47,14 +98,14 @@ function findNearestStation(
 
   return (
     stations
-      .filter((station) => station.lat != null && station.lon != null)
-      .map((station) => ({
-        station,
+      .filter((s) => s.lat != null && s.lon != null)
+      .map((s) => ({
+        station: s,
         distance: distanceKm(
           centroid.lat,
           centroid.lng,
-          Number(station.lat),
-          Number(station.lon)
+          Number(s.lat),
+          Number(s.lon)
         ),
       }))
       .sort((a, b) => a.distance - b.distance)[0]?.station ?? null
@@ -69,15 +120,20 @@ export default function HomePage({
   setDarkMode: (v: boolean) => void;
 }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
-  // --- Refs --- //
   const mapRef = useRef(null);
 
-  // --- Form / PDF --- //
   const { form, setField, resetForm } = useFormState();
-  const { pdfSaving, pdfError, handleGeneratePdf } = useGeneratePdf();
+  const {
+    pdfSaving,
+    pdfError,
+    setPdfError,
+    pdfSuccess,
+    resetPdfSuccess,
+    handleGeneratePdf,
+  } = useGeneratePdf();
 
-  // --- Property state --- //
   const {
     propertyBoundary,
     setPropertyBoundary,
@@ -104,25 +160,21 @@ export default function HomePage({
     resetProperty,
   } = usePropertyState();
 
-  // --- Terrain state --- //
   const {
     pointA,
     setPointA,
     pointB,
     setPointB,
-
     elev1,
     setElev1,
     elev2,
     setElev2,
     heightDifference,
     setHeightDifference,
-
     length,
     setLength,
     concentrationTime,
     setConcentrationTime,
-
     terrainLoading,
     setTerrainLoading,
     terrainError,
@@ -130,37 +182,124 @@ export default function HomePage({
     resetTerrain,
   } = useTerrainState();
 
-  // --- UI state --- //
   const [rightPanelView, setRightPanelView] = useState<RightPanelView>("map");
   const [mobileTab, setMobileTab] = useState<MobileTab>("map");
   const [mapLayer, setMapLayer] = useState<MapLayer>("kart");
 
-  // --- Weather / IVF state --- //
   const [weatherStations, setWeatherStations] = useState<WeatherStation[]>([]);
   const [selectedStationId, setSelectedStationId] = useState("");
   const [stationSearch, setStationSearch] = useState("");
   const [stationDropdownOpen, setStationDropdownOpen] = useState(false);
+  const [favoriteStationIds, setFavoriteStationIds] = useState<string[]>([]);
+  const [stationSortOrigin, setStationSortOrigin] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+
+  const [propertyLookupMode, setPropertyLookupMode] = useState<
+    "matrikkel" | "adresse"
+  >("matrikkel");
+  const [addressSearch, setAddressSearch] = useState("");
+  const [addressResults, setAddressResults] = useState<AddressSearchResult[]>(
+    []
+  );
+  const [addressLoading, setAddressLoading] = useState(false);
+  const [addressDropdownOpen, setAddressDropdownOpen] = useState(false);
+
   const [ivfData, setIvfData] = useState<IvfResponse | null>(null);
   const [ivfLoading, setIvfLoading] = useState(false);
   const [ivfError, setIvfError] = useState("");
 
-  // --- Calculation data --- //
   const [soilTypes, setSoilTypes] = useState([]);
+  const [validationErrors, setValidationErrors] =
+    useState<ValidationErrors>({});
+
+  const sortedWeatherStations = useMemo(() => {
+    return sortStationsByDistance(stationSortOrigin, weatherStations);
+  }, [stationSortOrigin, weatherStations]);
 
   const selectedStation = weatherStations.find(
-    (station) => station.id === selectedStationId
+    (s) => s.id === selectedStationId
   );
 
   useEffect(() => {
     fetchWeatherStations()
       .then((data) => {
         if (!data.length) return;
-
         setWeatherStations(data);
         setSelectedStationId(data[0].id);
       })
       .catch(console.error);
   }, []);
+
+  useEffect(() => {
+    async function fetchFavorites() {
+      if (!user?.uid) return;
+
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const snap = await getDoc(userRef);
+
+        if (snap.exists()) {
+          const data = snap.data();
+          if (Array.isArray(data.favoriteStationIds)) {
+            setFavoriteStationIds(data.favoriteStationIds);
+          }
+        }
+      } catch (e) {
+        console.error("Kunne ikke hente favorittstasjoner:", e);
+      }
+    }
+
+    fetchFavorites();
+  }, [user?.uid]);
+
+  useEffect(() => {
+    if (propertyLookupMode !== "adresse") return;
+
+    const query = addressSearch.trim();
+
+    if (query.length < 2) {
+      setAddressResults([]);
+      setAddressLoading(false);
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setAddressLoading(true);
+
+      fetchAddressSearch(query)
+        .then(setAddressResults)
+        .catch((e) => {
+          console.error("Adresse-søk feilet:", e);
+          setAddressResults([]);
+        })
+        .finally(() => setAddressLoading(false));
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [addressSearch, propertyLookupMode]);
+
+  async function toggleFavoriteStation(stationId: string) {
+    if (!user?.uid) return;
+
+    const nextFavorites = favoriteStationIds.includes(stationId)
+      ? favoriteStationIds.filter((id) => id !== stationId)
+      : [...favoriteStationIds, stationId];
+
+    setFavoriteStationIds(nextFavorites);
+
+    try {
+      await setDoc(
+        doc(db, "users", user.uid),
+        { favoriteStationIds: nextFavorites },
+        { merge: true }
+      );
+    } catch (e) {
+      console.error("Kunne ikke lagre favorittstasjon:", e);
+      setFavoriteStationIds(favoriteStationIds);
+    }
+  }
 
   useEffect(() => {
     if (!selectedStationId) return;
@@ -170,13 +309,13 @@ export default function HomePage({
 
     fetchIvfData(selectedStationId)
       .then(setIvfData)
-      .catch((error) => setIvfError(error.message))
+      .catch((e) => setIvfError(e.message))
       .finally(() => setIvfLoading(false));
   }, [selectedStationId]);
 
   useEffect(() => {
     fetch("http://localhost:8000/calculation/jordtyper")
-      .then((response) => response.json())
+      .then((r) => r.json())
       .then(setSoilTypes)
       .catch(() => {});
   }, []);
@@ -191,9 +330,56 @@ export default function HomePage({
     return () => clearTimeout(timeout);
   }, [mobileTab, rightPanelView]);
 
-  // ---------------------------------------------------------------------------
-  // Handlers
-  // ---------------------------------------------------------------------------
+  function validate(): ValidationErrors {
+    const errors: ValidationErrors = {};
+
+    if (!form.projectName.trim()) {
+      errors.projectName = "Prosjektnavn er påkrevd";
+    }
+
+    if (!municipalityNumber.trim()) {
+      errors.municipalityNumber = "Kommunenummer er påkrevd";
+    }
+
+    if (!cadastralNumber.trim()) {
+      errors.cadastralNumber = "Gårdsnummer er påkrevd";
+    }
+
+    if (!propertyNumber.trim()) {
+      errors.propertyNumber = "Bruksnummer er påkrevd";
+    }
+
+    if (!selectedStationId) {
+      errors.selectedStationId = "Velg en værstasjon";
+    }
+
+    if (heightDifference === null) {
+      errors.heightDifference =
+        "Høydeforskjell mangler – dobbeltklikk to punkter i kartet";
+    }
+
+    if (concentrationTime === null) {
+      errors.concentrationTime = "Konsentrasjonstid mangler";
+    }
+
+    if (!form.area || Number(form.area) <= 0) {
+      errors.area = "Areal må være større enn 0";
+    }
+
+    if (!form.climateFactor || Number(form.climateFactor) <= 0) {
+      errors.climateFactor = "Klimafaktor må være større enn 0";
+    }
+
+    if (form.infiltrationMethod === "soiltype") {
+      if (!form.selectedSoilType) {
+        errors.infiltration = "Velg jordtype";
+      } else if (!form.bottomArea || !form.sideArea) {
+        errors.infiltration = "Fyll ut A_bunn og A_sideflate";
+      }
+    }
+
+    return errors;
+  }
 
   function clearTerrainResult() {
     setElev1(null);
@@ -209,7 +395,6 @@ export default function HomePage({
       setPointA({ lat, lng });
       setPointB(null);
       clearTerrainResult();
-
       return;
     }
 
@@ -224,12 +409,54 @@ export default function HomePage({
         setHeightDifference(data.hoydeforskjell_m);
         setLength(data.lengde_m);
         setConcentrationTime(data.konsentrasjonstid_ivf_min);
+
+        setValidationErrors((prev) => ({
+          ...prev,
+          heightDifference: undefined,
+          concentrationTime: undefined,
+        }));
       })
-      .catch((error) => {
-        setTerrainError(error.message);
+      .catch((e) => {
+        setTerrainError(e.message);
         clearTerrainResult();
       })
       .finally(() => setTerrainLoading(false));
+  }
+
+  async function applyPropertyLookupResult(data: any) {
+    setPropertyAddress(data.adresse ?? null);
+    setPropertyBoundary(data.polygon ?? null);
+    setPropertyMatrikkel({
+      gnr: data.gardsnummer,
+      bnr: data.bruksnummer,
+      kommunenummer: data.kommunenummer,
+    });
+
+    if (data.centroid) {
+      setStationSortOrigin(data.centroid);
+
+      const nearestStation = findNearestStation(data.centroid, weatherStations);
+      if (nearestStation) {
+        setSelectedStationId(nearestStation.id);
+        setStationSearch("");
+        setStationDropdownOpen(false);
+      }
+    }
+
+    setRightPanelView("map");
+    setMobileTab("map");
+
+    if (data.warnings?.length > 0) {
+      setPropertyError(data.warnings.join(" "));
+    }
+
+    setValidationErrors((prev) => ({
+      ...prev,
+      municipalityNumber: undefined,
+      cadastralNumber: undefined,
+      propertyNumber: undefined,
+      selectedStationId: undefined,
+    }));
   }
 
   async function handleMatrikkelLookup() {
@@ -248,32 +475,41 @@ export default function HomePage({
         Number(propertyNumber)
       );
 
-      setPropertyAddress(data.adresse ?? null);
-      setPropertyBoundary(data.polygon ?? null);
-
-      setPropertyMatrikkel({
-        gnr: data.gardsnummer,
-        bnr: data.bruksnummer,
-        kommunenummer: data.kommunenummer,
-      });
-
-      const nearestStation = findNearestStation(data.centroid, weatherStations);
-
-      if (nearestStation) {
-        setSelectedStationId(nearestStation.id);
-        setStationSearch("");
-        setStationDropdownOpen(false);
-      }
-
-      setRightPanelView("map");
-      setMobileTab("map");
-
-      if (data.warnings?.length > 0) {
-        setPropertyError(data.warnings.join(" "));
-      }
-    } catch (error) {
+      await applyPropertyLookupResult(data);
+    } catch (e) {
       setPropertyError(
-        error instanceof Error ? error.message : "Could not look up property."
+        e instanceof Error ? e.message : "Could not look up property."
+      );
+    } finally {
+      setMatrikkelLoading(false);
+    }
+  }
+
+  async function handleAddressSelect(item: AddressSearchResult) {
+    setAddressSearch(item.adressetekst);
+    setAddressDropdownOpen(false);
+
+    setMunicipalityNumber(item.kommunenummer);
+    setCadastralNumber(String(item.gardsnummer));
+    setPropertyNumber(String(item.bruksnummer));
+
+    setMatrikkelLoading(true);
+    setPropertyError("");
+    setPropertyBoundary(null);
+    setPropertyAddress(null);
+    setPropertyMatrikkel(null);
+
+    try {
+      const data = await fetchPropertyByMatrikkel(
+        item.kommunenummer,
+        item.gardsnummer,
+        item.bruksnummer
+      );
+
+      await applyPropertyLookupResult(data);
+    } catch (e) {
+      setPropertyError(
+        e instanceof Error ? e.message : "Kunne ikke slå opp valgt adresse."
       );
     } finally {
       setMatrikkelLoading(false);
@@ -284,6 +520,24 @@ export default function HomePage({
     resetForm();
     resetProperty();
     resetTerrain();
+    setStationSortOrigin(null);
+    setAddressSearch("");
+    setAddressResults([]);
+    setAddressDropdownOpen(false);
+    setValidationErrors({});
+    setPdfError("");
+  }
+
+  function handleTryGenerate() {
+    const errors = validate();
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
+    setValidationErrors({});
+    handleGeneratePdf(pdfOptions);
   }
 
   function handleShowMap() {
@@ -301,17 +555,12 @@ export default function HomePage({
     mapRef,
     setMapLayer,
     projectName: form.projectName,
-
     elev1,
     elev2,
-
-    // Compatibility with old PDF hook naming.
     elevation: heightDifference,
-
     heightDifference,
     length,
     concentrationTime,
-
     area: form.area,
     returnPeriod: form.returnPeriod,
     climateFactor: form.climateFactor,
@@ -335,7 +584,6 @@ export default function HomePage({
   const sidebarProps = {
     form,
     setField,
-
     municipalityNumber,
     cadastralNumber,
     propertyNumber,
@@ -347,9 +595,17 @@ export default function HomePage({
     propertyAddress,
     propertyMatrikkel,
     propertyError,
-    propertyLoading,
-
-    weatherStations,
+    propertyLoading: propertyLoading || matrikkelLoading,
+    propertyLookupMode,
+    setPropertyLookupMode,
+    addressSearch,
+    setAddressSearch,
+    addressResults,
+    addressLoading,
+    addressDropdownOpen,
+    setAddressDropdownOpen,
+    handleAddressSelect,
+    weatherStations: sortedWeatherStations,
     selectedStationId,
     setSelectedStationId,
     stationSearch,
@@ -365,13 +621,12 @@ export default function HomePage({
     concentrationTime,
     terrainLoading,
     terrainError,
-
     soilTypes,
-
-    handleGeneratePdf: () => handleGeneratePdf(pdfOptions),
+    handleGeneratePdf: handleTryGenerate,
     pdfSaving,
     pdfError,
     handleReset,
+    validationErrors,
   };
 
   const mapProps = {
@@ -463,7 +718,7 @@ export default function HomePage({
     <div className="h-dvh w-full overflow-hidden bg-[#F6F8FF] dark:bg-slate-950">
       <Header
         darkMode={darkMode}
-        onToggleDarkMode={() => setDarkMode((value) => !value)}
+        onToggleDarkMode={() => setDarkMode((v) => !v)}
       />
 
       <main className="h-[calc(100dvh-4rem)] min-h-0 overflow-hidden">
@@ -500,13 +755,7 @@ export default function HomePage({
         <div className="flex h-full min-h-0 flex-col xl:hidden">
           <div className="flex shrink-0 border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
             <MobileTabButton tab="map" icon={<Map size={15} />} label="Kart" />
-
-            <MobileTabButton
-              tab="ivf"
-              icon={<Table2 size={15} />}
-              label="IVF"
-            />
-
+            <MobileTabButton tab="ivf" icon={<Table2 size={15} />} label="IVF" />
             <MobileTabButton
               tab="sidebar"
               icon={<SlidersHorizontal size={15} />}
@@ -539,6 +788,56 @@ export default function HomePage({
           </div>
         </div>
       </main>
+
+      {pdfSuccess && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-2xl dark:bg-slate-900">
+            <div className="mb-5 flex justify-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="none">
+                  <path
+                    d="M5 13l4 4L19 7"
+                    stroke="#16a34a"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            <h2 className="mb-2 text-center text-xl font-bold text-slate-900 dark:text-slate-100">
+              PDF opprettet!
+            </h2>
+
+            <p className="mb-6 text-center text-sm text-slate-500 dark:text-slate-400">
+              Rapporten er lagret og tilgjengelig under Mine filer.
+            </p>
+
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  resetPdfSuccess();
+                  navigate("/filer");
+                }}
+                className="w-full rounded-xl bg-[#213F53] py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+              >
+                Gå til Mine filer
+              </button>
+
+              <button
+                onClick={() => {
+                  resetPdfSuccess();
+                  handleReset();
+                }}
+                className="w-full rounded-xl border border-slate-300 bg-white py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                Opprett ny rapport
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

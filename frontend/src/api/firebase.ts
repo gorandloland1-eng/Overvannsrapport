@@ -35,13 +35,17 @@ export interface PdfReportData {
 }
 
 export async function savePdfReport(report: PdfReportData): Promise<void> {
+  const description = report.data.address
+    ? `Rapport fra ${report.data.address}`
+    : "Overvannsrapport";
+
   await addDoc(collection(db, "pdfReports"), {
     userId: report.userId,
-    projectName: report.projectName.trim() || "Ukjent prosjekt",
-    description: "Overvannsrapport",
+    projectName: report.projectName.trim() || "Unknown project",
+    description,
     pdfUrl: report.pdfUrl,
-    calcPdfUrl: report.calcPdfUrl ?? null,        // <-- ny
-    mapImageUrls: report.mapImageUrls ?? [],      // <-- ny
+    calcPdfUrl: report.calcPdfUrl ?? null,
+    mapImageUrls: report.mapImageUrls ?? [],
     screenshotUrls: {
       kart: report.screenshotUrls?.kart ?? null,
       terreng: report.screenshotUrls?.terreng ?? null,

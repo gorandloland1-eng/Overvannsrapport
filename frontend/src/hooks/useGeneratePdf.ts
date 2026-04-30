@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import html2canvas from "html2canvas-pro";
 import { generatePdf } from "../api/pdf";
 import { savePdfReport, uploadMapScreenshotToFirebase } from "../api/firebase";
@@ -36,18 +35,12 @@ interface GeneratePdfOptions {
 const MAP_LAYERS: Array<{
   key: "kart" | "terreng" | "satellitt";
   filename: string;
-  label: string;
 }> = [
-  { key: "kart",      filename: "kart.png",      label: "Kart" },
-  { key: "terreng",   filename: "terreng.png",   label: "Terreng" },
-  { key: "satellitt", filename: "satellitt.png", label: "Satellitt" },
+  { key: "kart",      filename: "kart.png" },
+  { key: "terreng",   filename: "terreng.png" },
+  { key: "satellitt", filename: "satellitt.png" },
 ];
 
-/**
- * Switches to the given map layer, waits for tiles to render,
- * then captures the container element using html2canvas-pro
- * and returns the canvas as a Blob.
- */
 async function captureLayerAsBlob(
   container: HTMLElement,
   setMapLayer: (layer: "kart" | "terreng" | "satellitt") => void,
@@ -56,7 +49,6 @@ async function captureLayerAsBlob(
 ): Promise<Blob | null> {
   return new Promise((resolve) => {
     setMapLayer(layerKey);
-
     setTimeout(async () => {
       try {
         const canvas = await html2canvas(container, {
@@ -75,16 +67,20 @@ async function captureLayerAsBlob(
 }
 
 export function useGeneratePdf() {
-  const navigate = useNavigate();
   const [pdfSaving, setPdfSaving] = useState(false);
   const [pdfError, setPdfError] = useState("");
+  const [pdfSuccess, setPdfSuccess] = useState(false);
+
+  function resetPdfSuccess() {
+    setPdfSuccess(false);
+  }
 
   async function handleGeneratePdf(opts: GeneratePdfOptions) {
     setPdfSaving(true);
     setPdfError("");
+    setPdfSuccess(false);
 
     try {
-      // --- Calculate Q_inf ---
       const qInf =
         opts.infiltrationMethod === "direct"
           ? Number(opts.manualQInf || 0)
@@ -99,34 +95,17 @@ export function useGeneratePdf() {
               );
             })();
 
-      // --- Capture map screenshots ---
-      const screenshotUrls: {
-        kart?: string;
-        terreng?: string;
-        satellitt?: string;
-      } = {};
-
+      // --- Map screenshots ---
+      const screenshotUrls: { kart?: string; terreng?: string; satellitt?: string } = {};
       const mapImageUrls: string[] = [];
 
       if (opts.mapRef.current) {
         const container: HTMLElement = opts.mapRef.current.getContainer();
-
         for (const layer of MAP_LAYERS) {
           try {
-            const blob = await captureLayerAsBlob(
-              container,
-              opts.setMapLayer,
-              layer.key
-            );
-
+            const blob = await captureLayerAsBlob(container, opts.setMapLayer, layer.key);
             if (blob) {
-              // uploadMapScreenshotToFirebase now receives a Blob instead of
-              // the container element — update that helper accordingly (see note below).
-              const url = await uploadMapScreenshotToFirebase(
-                blob,
-                opts.projectName,
-                layer.filename
-              );
+              const url = await uploadMapScreenshotToFirebase(blob, opts.projectName, layer.filename);
               screenshotUrls[layer.key] = url;
               mapImageUrls.push(url);
             }
@@ -134,12 +113,10 @@ export function useGeneratePdf() {
             console.warn(`Screenshot feilet for ${layer.key}:`, e);
           }
         }
-
-        // Reset to default layer after all screenshots
         opts.setMapLayer("kart");
       }
 
-      // --- Generate PDFs via backend ---
+      // --- Generate PDFs ---
       const response = await generatePdf({
         project_name: opts.projectName,
         height: opts.elevation ?? 0,
@@ -186,17 +163,15 @@ export function useGeneratePdf() {
         },
       });
 
-      navigate("/filer");
+      setPdfSuccess(true);
     } catch (e) {
       setPdfError(
-        e instanceof Error
-          ? e.message
-          : "Noe gikk galt under generering av PDF"
+        e instanceof Error ? e.message : "Noe gikk galt under generering av PDF"
       );
     } finally {
       setPdfSaving(false);
     }
   }
 
-  return { pdfSaving, pdfError, setPdfError, handleGeneratePdf };
+  return { pdfSaving, pdfError, setPdfError, pdfSuccess, resetPdfSuccess, handleGeneratePdf };
 }

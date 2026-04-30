@@ -8,12 +8,15 @@ import InfiltrationSection from "./InfiltrationSection";
 import CalculationSection from "./CalculationSection";
 
 export default function Sidebar(props) {
+  const errors = props.validationErrors ?? {};
+
   return (
     <aside className="h-full min-h-0 overflow-y-auto border-slate-200 bg-[#F6F8FF] p-4 dark:border-slate-800 dark:bg-slate-950 xl:border-l">
       <div className="space-y-5">
         <ProjectSection
           projectName={props.form.projectName}
           setField={props.setField}
+          error={errors.projectName}
         />
 
         <PropertySection
@@ -29,6 +32,20 @@ export default function Sidebar(props) {
           matrikkel={props.propertyMatrikkel}
           error={props.propertyError}
           propertyLoading={props.propertyLoading}
+          validationErrors={{
+            municipalityNumber: errors.municipalityNumber,
+            cadastralNumber: errors.cadastralNumber,
+            propertyNumber: errors.propertyNumber,
+          }}
+          lookupMode={props.propertyLookupMode}
+          setLookupMode={props.setPropertyLookupMode}
+          addressSearch={props.addressSearch}
+          setAddressSearch={props.setAddressSearch}
+          addressResults={props.addressResults}
+          addressLoading={props.addressLoading}
+          addressDropdownOpen={props.addressDropdownOpen}
+          setAddressDropdownOpen={props.setAddressDropdownOpen}
+          onAddressSelect={props.handleAddressSelect}
         />
 
         <StationSection
@@ -39,7 +56,9 @@ export default function Sidebar(props) {
           setSearch={props.setStationSearch}
           dropdownOpen={props.stationDropdownOpen}
           setDropdownOpen={props.setStationDropdownOpen}
-          stationBoxRef={props.stationBoxRef}
+          favoriteStationIds={props.favoriteStationIds}
+          toggleFavoriteStation={props.toggleFavoriteStation}
+          error={errors.selectedStationId}
         />
 
         <TerrainSection
@@ -51,6 +70,10 @@ export default function Sidebar(props) {
           loading={props.terrainLoading}
           error={props.terrainError}
           propertyLoading={props.propertyLoading}
+          validationErrors={{
+            heightDifference: errors.heightDifference,
+            concentrationTime: errors.concentrationTime,
+          }}
         />
 
         <RunoffCoefficientSection
@@ -64,6 +87,7 @@ export default function Sidebar(props) {
           form={props.form}
           setField={props.setField}
           soilTypes={props.soilTypes}
+          error={errors.infiltration}
         />
 
         <CalculationSection
@@ -73,6 +97,10 @@ export default function Sidebar(props) {
           loading={props.pdfSaving}
           error={props.pdfError}
           onReset={props.handleReset}
+          validationErrors={{
+            area: errors.area,
+            climateFactor: errors.climateFactor,
+          }}
         />
       </div>
     </aside>

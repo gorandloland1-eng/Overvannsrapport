@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 from typing import Any
 
 import requests
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/v1/eiendom", tags=["eiendom"])
@@ -30,15 +30,18 @@ class EiendomOppslagRequest(BaseModel):
     festenummer: int | None = None
     seksjonsnummer: int | None = None
 
+
 class LatLng(BaseModel):
     lat: float
     lng: float
+
 
 class Bounds(BaseModel):
     south: float
     north: float
     west: float
     east: float
+
 
 class EiendomOppslagResponse(BaseModel):
     eiendom_id: str
@@ -51,16 +54,29 @@ class EiendomOppslagResponse(BaseModel):
     polygon: dict | None = None
     warnings: list[str] = Field(default_factory=list)
 
+
 class EiendomMatrikkelDto(BaseModel):
     gnr: int
     bnr: int
     kommunenummer: str = ""
+
 
 class EiendomPunktResponse(BaseModel):
     adresse: str | None = None
     matrikkel: EiendomMatrikkelDto | None = None
     grense: dict[str, Any] | None = None
     warnings: list[str] = Field(default_factory=list)
+
+
+class AdresseSokResult(BaseModel):
+    id: str
+    adressetekst: str
+    kommunenummer: str
+    kommunenavn: str | None = None
+    gardsnummer: int
+    bruksnummer: int
+    lat: float | None = None
+    lng: float | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -80,29 +96,34 @@ def _utm33_to_latlng(easting: float, northing: float) -> tuple[float, float]:
     y = northing
 
     m = y / k0
-    mu = m / (a * (1 - e2/4 - 3*e2**2/64 - 5*e2**3/256))
+    mu = m / (a * (1 - e2 / 4 - 3 * e2**2 / 64 - 5 * e2**3 / 256))
 
     phi1 = mu
-    phi1 += (3*e1/2 - 27*e1**3/32) * math.sin(2*mu)
-    phi1 += (21*e1**2/16 - 55*e1**4/32) * math.sin(4*mu)
-    phi1 += (151*e1**3/96) * math.sin(6*mu)
-    phi1 += (1097*e1**4/512) * math.sin(8*mu)
+    phi1 += (3 * e1 / 2 - 27 * e1**3 / 32) * math.sin(2 * mu)
+    phi1 += (21 * e1**2 / 16 - 55 * e1**4 / 32) * math.sin(4 * mu)
+    phi1 += (151 * e1**3 / 96) * math.sin(6 * mu)
+    phi1 += (1097 * e1**4 / 512) * math.sin(8 * mu)
 
-    n1 = a / math.sqrt(1 - e2 * math.sin(phi1)**2)
-    t1 = math.tan(phi1)**2
-    c1 = ep2 * math.cos(phi1)**2
-    r1 = a * (1 - e2) / (1 - e2 * math.sin(phi1)**2)**1.5
+    n1 = a / math.sqrt(1 - e2 * math.sin(phi1) ** 2)
+    t1 = math.tan(phi1) ** 2
+    c1 = ep2 * math.cos(phi1) ** 2
+    r1 = a * (1 - e2) / (1 - e2 * math.sin(phi1) ** 2) ** 1.5
     d = x / (n1 * k0)
 
     lat = phi1 - (n1 * math.tan(phi1) / r1) * (
-        d**2/2
-        - (5 + 3*t1 + 10*c1 - 4*c1**2 - 9*ep2) * d**4/24
-        + (61 + 90*t1 + 298*c1 + 45*t1**2 - 252*ep2 - 3*c1**2) * d**6/720
+        d**2 / 2
+        - (5 + 3 * t1 + 10 * c1 - 4 * c1**2 - 9 * ep2) * d**4 / 24
+        + (61 + 90 * t1 + 298 * c1 + 45 * t1**2 - 252 * ep2 - 3 * c1**2)
+        * d**6
+        / 720
     )
+
     lon = lon0 + (
         d
-        - (1 + 2*t1 + c1) * d**3/6
-        + (5 - 2*c1 + 28*t1 - 3*c1**2 + 8*ep2 + 24*t1**2) * d**5/120
+        - (1 + 2 * t1 + c1) * d**3 / 6
+        + (5 - 2 * c1 + 28 * t1 - 3 * c1**2 + 8 * ep2 + 24 * t1**2)
+        * d**5
+        / 120
     ) / math.cos(phi1)
 
     return math.degrees(lat), math.degrees(lon)
@@ -115,25 +136,32 @@ def _utm33_to_latlng(easting: float, northing: float) -> tuple[float, float]:
 def _flatten_coords(coords: list) -> list:
     if not coords:
         return []
+
     if isinstance(coords[0][0][0], list):
         flat = []
         for polygon in coords:
             for ring in polygon:
                 flat.extend(ring)
         return flat
-    else:
-        return coords[0]
+
+    return coords[0]
+
 
 def _calculate_centroid(coords: list) -> dict:
     points = _flatten_coords(coords)
+
     lng = sum(p[0] for p in points) / len(points)
     lat = sum(p[1] for p in points) / len(points)
+
     return {"lat": lat, "lng": lng}
+
 
 def _calculate_bounds(coords: list) -> dict:
     points = _flatten_coords(coords)
+
     lngs = [p[0] for p in points]
     lats = [p[1] for p in points]
+
     return {
         "south": min(lats),
         "north": max(lats),
@@ -150,17 +178,21 @@ def _safe_get_json(url: str, params: dict[str, Any]) -> dict | None:
     try:
         res = requests.get(url, params=params, timeout=TIMEOUT)
         print(f"[HTTP] {res.url} -> {res.status_code}")
+
         if res.status_code >= 400:
             print(f"[HTTP] error: {res.text[:300]}")
             return None
+
         return res.json()
     except Exception as e:
         print(f"[HTTP ERROR] {e}")
         return None
 
+
 def _to_int_or_none(value: Any) -> int | None:
     if value is None or value == "":
         return None
+
     try:
         return int(value)
     except (TypeError, ValueError):
@@ -174,21 +206,25 @@ def _to_int_or_none(value: Any) -> int | None:
 def _parse_gml_rings(response_content: bytes) -> list:
     root = ET.fromstring(response_content)
     rings = []
+
     for pos_list in root.iter(f"{{{GML_NS}}}posList"):
         text = pos_list.text.strip()
         nums = list(map(float, text.split()))
         ring = []
+
         for i in range(0, len(nums) - 1, 2):
             easting, northing = nums[i], nums[i + 1]
             lat, lng = _utm33_to_latlng(easting, northing)
-            ring.append([lng, lat])  # GeoJSON: [lng, lat]
+            ring.append([lng, lat])
+
         if ring:
             rings.append(ring)
+
     return rings
 
 
 # ---------------------------------------------------------------------------
-# WFS: hent polygon via BBOX (brukes av begge endepunkter)
+# WFS: hent polygon via BBOX
 # ---------------------------------------------------------------------------
 
 def _hent_grense_fra_bbox(lat: float, lng: float) -> dict[str, Any] | None:
@@ -210,6 +246,7 @@ def _hent_grense_fra_bbox(lat: float, lng: float) -> dict[str, Any] | None:
             },
             timeout=TIMEOUT,
         )
+
         print(f"[WFS BBOX] status={response.status_code}")
     except requests.RequestException as e:
         print(f"[WFS BBOX] failed: {e}")
@@ -221,6 +258,7 @@ def _hent_grense_fra_bbox(lat: float, lng: float) -> dict[str, Any] | None:
     try:
         rings = _parse_gml_rings(response.content)
         print(f"[WFS BBOX] parsed {len(rings)} rings")
+
         if not rings:
             return None
 
@@ -229,9 +267,16 @@ def _hent_grense_fra_bbox(lat: float, lng: float) -> dict[str, Any] | None:
             if len(rings) == 1
             else {"type": "MultiPolygon", "coordinates": [[ring] for ring in rings]}
         )
+
         return {
             "type": "FeatureCollection",
-            "features": [{"type": "Feature", "geometry": geometry, "properties": {}}]
+            "features": [
+                {
+                    "type": "Feature",
+                    "geometry": geometry,
+                    "properties": {},
+                }
+            ],
         }
     except ET.ParseError as e:
         print(f"[WFS BBOX] parse error: {e}")
@@ -239,11 +284,27 @@ def _hent_grense_fra_bbox(lat: float, lng: float) -> dict[str, Any] | None:
 
 
 # ---------------------------------------------------------------------------
-# ADRESSE: hent koordinat og adressetekst
+# ADRESSE
 # ---------------------------------------------------------------------------
 
-def _hent_adresse_med_koordinat(knr: str, gnr: int, bnr: int) -> tuple[str | None, float | None, float | None]:
-    """Returnerer (adresse, lat, lng) eller (None, None, None)"""
+def _format_adresse(first: dict) -> str | None:
+    tekst = first.get("adressetekst")
+    kommune = first.get("kommunenavn")
+
+    if tekst and kommune:
+        return f"{tekst}, {kommune}"
+
+    if tekst:
+        return str(tekst)
+
+    return None
+
+
+def _hent_adresse_med_koordinat(
+    knr: str,
+    gnr: int,
+    bnr: int,
+) -> tuple[str | None, float | None, float | None]:
     data = _safe_get_json(
         GEONORGE_ADRESSE_URL,
         params={
@@ -266,14 +327,14 @@ def _hent_adresse_med_koordinat(knr: str, gnr: int, bnr: int) -> tuple[str | Non
         )
     if not data:
         return None, None, None
+
     adresser = data.get("adresser", [])
+
     if not adresser or not isinstance(adresser[0], dict):
         return None, None, None
 
     first = adresser[0]
-    tekst = first.get("adressetekst")
-    kommune = first.get("kommunenavn")
-    adresse = f"{tekst}, {kommune}" if tekst and kommune else (str(tekst) if tekst else None)
+    adresse = _format_adresse(first)
 
     rep = first.get("representasjonspunkt", {})
     lat = rep.get("lat")
@@ -291,50 +352,115 @@ def _hent_adresse(knr: str, gnr: int, bnr: int) -> str | None:
 # ENDPOINTS
 # ---------------------------------------------------------------------------
 
+@router.get("/adresse/sok", response_model=list[AdresseSokResult])
+def adresse_sok(
+    q: str = Query(min_length=2),
+    treff_per_side: int = Query(default=10, ge=1, le=25),
+) -> list[AdresseSokResult]:
+    print(f"\n{'=' * 40}")
+    print(f"[adresse/sok] q={q}")
+
+    data = _safe_get_json(
+        GEONORGE_ADRESSE_URL,
+        params={
+            "sok": q,
+            "treffPerSide": treff_per_side,
+            "utkoordsys": 4326,
+        },
+    )
+
+    if not data:
+        return []
+
+    results: list[AdresseSokResult] = []
+
+    for index, item in enumerate(data.get("adresser", [])):
+        gnr = _to_int_or_none(item.get("gardsnummer"))
+        bnr = _to_int_or_none(item.get("bruksnummer"))
+        kommunenummer = str(item.get("kommunenummer") or "")
+
+        if gnr is None or bnr is None or not kommunenummer:
+            continue
+
+        rep = item.get("representasjonspunkt", {}) or {}
+
+        adresse = _format_adresse(item)
+        if not adresse:
+            continue
+
+        results.append(
+            AdresseSokResult(
+                id=str(item.get("adressekode") or f"{kommunenummer}-{gnr}-{bnr}-{index}"),
+                adressetekst=adresse,
+                kommunenummer=kommunenummer,
+                kommunenavn=item.get("kommunenavn"),
+                gardsnummer=gnr,
+                bruksnummer=bnr,
+                lat=rep.get("lat"),
+                lng=rep.get("lon"),
+            )
+        )
+
+    print(f"[adresse/sok] results={len(results)}")
+    print(f"{'=' * 40}\n")
+
+    return results
+
+
 @router.post("/oppslag", response_model=EiendomOppslagResponse)
 def eiendom_oppslag(payload: EiendomOppslagRequest) -> EiendomOppslagResponse:
-    print(f"\n{'='*40}")
-    print(f"[oppslag] knr={payload.kommunenummer} gnr={payload.gardsnummer} bnr={payload.bruksnummer}")
+    print(f"\n{'=' * 40}")
+    print(
+        f"[oppslag] knr={payload.kommunenummer} "
+        f"gnr={payload.gardsnummer} bnr={payload.bruksnummer}"
+    )
+
     warnings: list[str] = []
 
-    # Steg 1: hent koordinat fra adresse-API
     adresse, lat, lng = _hent_adresse_med_koordinat(
         payload.kommunenummer,
         payload.gardsnummer,
         payload.bruksnummer,
     )
+
     print(f"[oppslag] adresse={adresse} koordinat=lat={lat} lng={lng}")
 
     if not adresse:
         warnings.append("Fant ingen adresse for dette gårds- og bruksnummeret.")
 
-    # Steg 2: hent polygon via BBOX fra koordinat
     geojson = None
     centroid = None
     bounds = None
 
     if lat is not None and lng is not None:
         grense = _hent_grense_fra_bbox(lat, lng)
+
         if grense and grense.get("features"):
             geojson = grense
             geometry = grense["features"][0]["geometry"]
+
             centroid_raw = _calculate_centroid(geometry["coordinates"])
             bounds_raw = _calculate_bounds(geometry["coordinates"])
+
             centroid = LatLng(**centroid_raw)
             bounds = Bounds(**bounds_raw)
-            # Legg til matrikkelinfo i properties
+
             grense["features"][0]["properties"] = {
                 "kommunenummer": payload.kommunenummer,
                 "gaardsnummer": payload.gardsnummer,
                 "bruksnummer": payload.bruksnummer,
             }
         else:
-            warnings.append("Fant ingen eiendomsgrense for dette gårds- og bruksnummeret.")
+            warnings.append(
+                "Fant ingen eiendomsgrense for dette gårds- og bruksnummeret."
+            )
     else:
-        warnings.append("Fant ingen eiendomsgrense for dette gårds- og bruksnummeret.")
+        warnings.append(
+            "Fant ingen eiendomsgrense for dette gårds- og bruksnummeret."
+        )
 
     print(f"[oppslag] polygon={'yes' if geojson else 'no'} centroid={centroid} bounds={bounds}")
-    print(f"{'='*40}\n")
+    print(f"{'=' * 40}\n")
 
     return EiendomOppslagResponse(
         eiendom_id=f"{payload.kommunenummer}-{payload.gardsnummer}/{payload.bruksnummer}",
@@ -350,9 +476,14 @@ def eiendom_oppslag(payload: EiendomOppslagRequest) -> EiendomOppslagResponse:
 
 
 @router.get("/punkt", response_model=EiendomPunktResponse)
-def eiendom_for_punkt(lat: float, lng: float, radius: int = 50) -> EiendomPunktResponse:
-    print(f"\n{'='*40}")
+def eiendom_for_punkt(
+    lat: float,
+    lng: float,
+    radius: int = 50,
+) -> EiendomPunktResponse:
+    print(f"\n{'=' * 40}")
     print(f"[punkt] lat={lat} lng={lng}")
+
     warnings: list[str] = []
 
     adresse_data = _safe_get_json(
@@ -372,17 +503,14 @@ def eiendom_for_punkt(lat: float, lng: float, radius: int = 50) -> EiendomPunktR
 
     if adresse_data:
         adresser = adresse_data.get("adresser", [])
+
         if adresser and isinstance(adresser[0], dict):
             first = adresser[0]
-            tekst = first.get("adressetekst")
-            kommune = first.get("kommunenavn")
-            if tekst and kommune:
-                adresse = f"{tekst}, {kommune}"
-            elif tekst:
-                adresse = str(tekst)
+            adresse = _format_adresse(first)
 
             gnr = _to_int_or_none(first.get("gardsnummer"))
             bnr = _to_int_or_none(first.get("bruksnummer"))
+
             if gnr is not None and bnr is not None:
                 matrikkel = EiendomMatrikkelDto(
                     gnr=gnr,
@@ -394,11 +522,12 @@ def eiendom_for_punkt(lat: float, lng: float, radius: int = 50) -> EiendomPunktR
 
     if not adresse and not matrikkel:
         warnings.append("Fant ingen adresse for denne plasseringen.")
+
     if not grense:
         warnings.append("Fant ingen eiendomsgrense for denne plasseringen.")
 
     print(f"[punkt] adresse={adresse} grense={'yes' if grense else 'no'}")
-    print(f"{'='*40}\n")
+    print(f"{'=' * 40}\n")
 
     return EiendomPunktResponse(
         adresse=adresse,

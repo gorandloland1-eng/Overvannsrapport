@@ -7,17 +7,19 @@ type Props = {
   loading: boolean;
   error: string;
   propertyLoading?: boolean;
+  validationErrors?: {
+    heightDifference?: string;
+    concentrationTime?: string;
+  };
 };
 
 function formatMeters(value?: number | null) {
   if (value == null) return "";
-
   return `${value.toFixed(1)} m`;
 }
 
 function formatMinutes(value?: number | null) {
   if (value == null) return "";
-
   return `${value.toFixed(2)} min`;
 }
 
@@ -26,11 +28,7 @@ function hasAnyResult(
   length?: number | null,
   concentrationTime?: number | null
 ) {
-  return (
-    heightDifference != null ||
-    length != null ||
-    concentrationTime != null
-  );
+  return heightDifference != null || length != null || concentrationTime != null;
 }
 
 export default function TerrainSection({
@@ -42,7 +40,12 @@ export default function TerrainSection({
   loading,
   error,
   propertyLoading,
+  validationErrors = {},
 }: Props) {
+  const missingTerrain =
+    (validationErrors.heightDifference && heightDifference === null) ||
+    (validationErrors.concentrationTime && concentrationTime === null);
+
   return (
     <section>
       <div className="grid grid-cols-2 gap-3">
@@ -50,7 +53,6 @@ export default function TerrainSection({
           <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
             Høyde punkt 1
           </label>
-
           <input
             className="h-10 w-full rounded-xl border border-slate-200 bg-slate-100 px-3 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
             value={loading ? "Henter..." : formatMeters(elev1)}
@@ -62,7 +64,6 @@ export default function TerrainSection({
           <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
             Høyde punkt 2
           </label>
-
           <input
             className="h-10 w-full rounded-xl border border-slate-200 bg-slate-100 px-3 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
             value={loading ? "Henter..." : formatMeters(elev2)}
@@ -72,47 +73,37 @@ export default function TerrainSection({
       </div>
 
       {error && (
-        <div className="mt-2 text-xs text-red-600 dark:text-red-400">
-          {error}
-        </div>
+        <div className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</div>
+      )}
+
+      {missingTerrain && !error && (
+        <p className="mt-1 text-xs text-red-500 dark:text-red-400">
+          {validationErrors.heightDifference ?? validationErrors.concentrationTime}
+        </p>
       )}
 
       <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-        Dobbeltklikk to punkter i kartet for å beregne høyder, lengde og
-        konsentrasjonstid.
+        Dobbeltklikk to punkter i kartet for å beregne høyder, lengde og konsentrasjonstid.
       </div>
 
       {hasAnyResult(heightDifference, length, concentrationTime) && !loading && (
-        <div className="mt-3 rounded-xl border border-slate-200 bg-white/60 p-3 text-sm text-slate-800 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100">
+        <div className={`mt-3 rounded-xl border p-3 text-sm dark:text-slate-100 ${
+          missingTerrain
+            ? "border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/10"
+            : "border-slate-200 bg-white/60 dark:border-slate-700 dark:bg-slate-800/60"
+        }`}>
           <div className="grid gap-2">
             <div className="flex items-center justify-between gap-4">
-              <span className="text-slate-500 dark:text-slate-400">
-                Høydeforskjell
-              </span>
-
-              <span className="font-semibold">
-                {formatMeters(heightDifference)}
-              </span>
+              <span className="text-slate-500 dark:text-slate-400">Høydeforskjell</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-100">{formatMeters(heightDifference)}</span>
             </div>
-
             <div className="flex items-center justify-between gap-4">
-              <span className="text-slate-500 dark:text-slate-400">
-                Lengdeforskjell
-              </span>
-
-              <span className="font-semibold">
-                {formatMeters(length)}
-              </span>
+              <span className="text-slate-500 dark:text-slate-400">Lengdeforskjell</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-100">{formatMeters(length)}</span>
             </div>
-
             <div className="flex items-center justify-between gap-4">
-              <span className="text-slate-500 dark:text-slate-400">
-                Konsentrasjonstid
-              </span>
-
-              <span className="font-semibold">
-                {formatMinutes(concentrationTime)}
-              </span>
+              <span className="text-slate-500 dark:text-slate-400">Konsentrasjonstid</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-100">{formatMinutes(concentrationTime)}</span>
             </div>
           </div>
         </div>

@@ -8,15 +8,19 @@ type Props = {
   loading: boolean;
   error: string;
   onReset: () => void;
+  validationErrors?: {
+    area?: string;
+    climateFactor?: string;
+  };
 };
 
 const RETURN_PERIOD_OPTIONS = [
-  { value: "2", label: "2 år" },
-  { value: "5", label: "5 år" },
-  { value: "10", label: "10 år" },
-  { value: "20", label: "20 år" },
-  { value: "25", label: "25 år" },
-  { value: "50", label: "50 år" },
+  { value: "2",   label: "2 år" },
+  { value: "5",   label: "5 år" },
+  { value: "10",  label: "10 år" },
+  { value: "20",  label: "20 år" },
+  { value: "25",  label: "25 år" },
+  { value: "50",  label: "50 år" },
   { value: "100", label: "100 år" },
   { value: "200", label: "200 år" },
 ];
@@ -28,6 +32,7 @@ export default function CalculationSection({
   loading,
   error,
   onReset,
+  validationErrors = {},
 }: Props) {
   const [returnPeriodOpen, setReturnPeriodOpen] = useState(false);
   const returnPeriodRef = useRef<HTMLDivElement | null>(null);
@@ -36,14 +41,15 @@ export default function CalculationSection({
     RETURN_PERIOD_OPTIONS.find((opt) => opt.value === form.returnPeriod) ??
     RETURN_PERIOD_OPTIONS[0];
 
+  const areaError = validationErrors.area && (!form.area || Number(form.area) <= 0);
+  const climateError = validationErrors.climateFactor && (!form.climateFactor || Number(form.climateFactor) <= 0);
+
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      const target = e.target as Node;
-      if (!returnPeriodRef.current?.contains(target)) {
+      if (!returnPeriodRef.current?.contains(e.target as Node)) {
         setReturnPeriodOpen(false);
       }
     }
-
     window.addEventListener("mousedown", handleClickOutside);
     return () => window.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -51,6 +57,7 @@ export default function CalculationSection({
   return (
     <section>
       <div className="grid grid-cols-2 gap-4">
+        {/* Areal */}
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
             Areal
@@ -60,15 +67,22 @@ export default function CalculationSection({
             value={form.area}
             onChange={(e) => setField("area", e.target.value)}
             placeholder="200"
-            className="h-12 w-full rounded-[22px] border border-slate-200 bg-white px-5 text-base text-slate-900 outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
+            className={`h-12 w-full rounded-[22px] border bg-white px-5 text-base text-slate-900 outline-none focus:ring-4 dark:bg-slate-900 dark:text-slate-100 ${
+              areaError
+                ? "border-red-400 focus:border-red-400 focus:ring-red-100 dark:border-red-500 dark:focus:ring-red-900/30"
+                : "border-slate-200 focus:border-slate-300 focus:ring-slate-200 dark:border-slate-700 dark:focus:ring-slate-700"
+            }`}
           />
+          {areaError && (
+            <p className="mt-1 text-xs text-red-500 dark:text-red-400">{validationErrors.area}</p>
+          )}
         </div>
 
+        {/* Returperiode */}
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
             Returperiode
           </label>
-
           <div className="relative z-10" ref={returnPeriodRef}>
             <button
               type="button"
@@ -81,9 +95,7 @@ export default function CalculationSection({
               <ChevronDown
                 size={20}
                 strokeWidth={2.2}
-                className={`shrink-0 text-slate-700 transition-transform dark:text-slate-200 ${
-                  returnPeriodOpen ? "rotate-180" : ""
-                }`}
+                className={`shrink-0 text-slate-700 transition-transform dark:text-slate-200 ${returnPeriodOpen ? "rotate-180" : ""}`}
               />
             </button>
 
@@ -93,14 +105,9 @@ export default function CalculationSection({
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => {
-                      setField("returnPeriod", option.value);
-                      setReturnPeriodOpen(false);
-                    }}
+                    onClick={() => { setField("returnPeriod", option.value); setReturnPeriodOpen(false); }}
                     className={`block w-full px-4 py-2.5 text-left text-sm transition hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800 ${
-                      form.returnPeriod === option.value
-                        ? "bg-slate-100 dark:bg-slate-800"
-                        : ""
+                      form.returnPeriod === option.value ? "bg-slate-100 dark:bg-slate-800" : ""
                     }`}
                   >
                     {option.label}
@@ -111,6 +118,7 @@ export default function CalculationSection({
           </div>
         </div>
 
+        {/* Klimafaktor */}
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
             Klimafaktor
@@ -121,16 +129,21 @@ export default function CalculationSection({
             value={form.climateFactor}
             onChange={(e) => setField("climateFactor", e.target.value)}
             placeholder="1.0"
-            className="h-12 w-full rounded-[22px] border border-slate-200 bg-white px-5 text-base text-slate-900 outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-slate-700"
+            className={`h-12 w-full rounded-[22px] border bg-white px-5 text-base text-slate-900 outline-none focus:ring-4 dark:bg-slate-900 dark:text-slate-100 ${
+              climateError
+                ? "border-red-400 focus:border-red-400 focus:ring-red-100 dark:border-red-500 dark:focus:ring-red-900/30"
+                : "border-slate-200 focus:border-slate-300 focus:ring-slate-200 dark:border-slate-700 dark:focus:ring-slate-700"
+            }`}
           />
+          {climateError && (
+            <p className="mt-1 text-xs text-red-500 dark:text-red-400">{validationErrors.climateFactor}</p>
+          )}
         </div>
 
       </div>
 
       {error && (
-        <div className="mt-3 text-xs text-red-600 dark:text-red-400">
-          {error}
-        </div>
+        <div className="mt-3 text-xs text-red-600 dark:text-red-400">{error}</div>
       )}
 
       <div className="space-y-3 pt-4">
@@ -138,7 +151,7 @@ export default function CalculationSection({
           type="button"
           onClick={onGenerate}
           disabled={loading}
-          className="h-14 w-full rounded-[16px] bg-slate-300 text-base font-semibold text-black transition hover:bg-slate-400 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600"
+          className="h-14 w-full rounded-[16px] bg-[#213F53] text-base font-semibold text-white transition hover:bg-[#1a3244] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? "Genererer PDF..." : "Generer PDF"}
         </button>
