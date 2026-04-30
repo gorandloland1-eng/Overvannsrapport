@@ -33,7 +33,12 @@ export type AddressSearchResult = {
 export async function fetchPropertyByMatrikkel(
   municipalityNumber: string,
   cadastralNumber: number,
-  propertyNumber: number
+  propertyNumber: number,
+  selectedAddress?: {
+    adresse: string;
+    lat?: number | null;
+    lng?: number | null;
+  }
 ): Promise<PropertyLookupResponse> {
   const res = await fetch(`${BASE}/v1/eiendom/oppslag`, {
     method: "POST",
@@ -42,6 +47,9 @@ export async function fetchPropertyByMatrikkel(
       kommunenummer: municipalityNumber,
       gardsnummer: cadastralNumber,
       bruksnummer: propertyNumber,
+      adresse: selectedAddress?.adresse,
+      lat: selectedAddress?.lat,
+      lng: selectedAddress?.lng,
     }),
   });
 

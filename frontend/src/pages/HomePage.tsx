@@ -503,7 +503,12 @@ export default function HomePage({
       const data = await fetchPropertyByMatrikkel(
         item.kommunenummer,
         item.gardsnummer,
-        item.bruksnummer
+        item.bruksnummer,
+        {
+          adresse: item.adressetekst,
+          lat: item.lat,
+          lng: item.lng,
+        }
       );
 
       await applyPropertyLookupResult(data);
