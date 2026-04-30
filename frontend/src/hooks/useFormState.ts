@@ -4,7 +4,7 @@ export const defaultFormState = {
   projectName: "",
   area: "",
   returnPeriod: "5",
-  climateFactor: "1.0",
+  climateFactor: "1.4",
   maxDischarge: "0.0",
   infiltrationMethod: "direct" as "direct" | "soiltype",
   selectedSoilType: "",
