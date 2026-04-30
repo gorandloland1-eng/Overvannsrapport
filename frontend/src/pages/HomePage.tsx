@@ -169,43 +169,37 @@ export default function HomePage({
 
   function validate(): ValidationErrors {
     const errors: ValidationErrors = {};
-
-    if (!form.projectName.trim()) {
-      errors.projectName = "Prosjektnavn er påkrevd";
-    }
-    if (!municipalityNumber.trim()) {
-      errors.municipalityNumber = "Kommunenummer er påkrevd";
-    }
-    if (!cadastralNumber.trim()) {
-      errors.cadastralNumber = "Gårdsnummer er påkrevd";
-    }
-    if (!propertyNumber.trim()) {
-      errors.propertyNumber = "Bruksnummer er påkrevd";
-    }
-    if (!selectedStationId) {
-      errors.selectedStationId = "Velg en værstasjon";
-    }
-    if (heightDifference === null) {
-      errors.heightDifference = "Høydeforskjell mangler – dobbeltklikk to punkter i kartet";
-    }
-    if (concentrationTime === null) {
-      errors.concentrationTime = "Konsentrasjonstid mangler";
-    }
-    if (!form.area || Number(form.area) <= 0) {
-      errors.area = "Areal må være større enn 0";
-    }
-    if (!form.climateFactor || Number(form.climateFactor) <= 0) {
-      errors.climateFactor = "Klimafaktor må være større enn 0";
-    }
+    if (!form.projectName.trim()) errors.projectName = "Prosjektnavn er påkrevd";
+    if (!municipalityNumber.trim()) errors.municipalityNumber = "Kommunenummer er påkrevd";
+    if (!cadastralNumber.trim()) errors.cadastralNumber = "Gårdsnummer er påkrevd";
+    if (!propertyNumber.trim()) errors.propertyNumber = "Bruksnummer er påkrevd";
+    if (!selectedStationId) errors.selectedStationId = "Velg en værstasjon";
+    if (heightDifference === null) errors.heightDifference = "Høydeforskjell mangler – dobbeltklikk to punkter i kartet";
+    if (concentrationTime === null) errors.concentrationTime = "Konsentrasjonstid mangler";
+    if (!form.area || Number(form.area) <= 0) errors.area = "Areal må være større enn 0";
+    if (!form.climateFactor || Number(form.climateFactor) <= 0) errors.climateFactor = "Klimafaktor må være større enn 0";
     if (form.infiltrationMethod === "soiltype") {
-      if (!form.selectedSoilType) {
-        errors.infiltration = "Velg jordtype";
-      } else if (!form.bottomArea || !form.sideArea) {
-        errors.infiltration = "Fyll ut A_bunn og A_sideflate";
-      }
+      if (!form.selectedSoilType) errors.infiltration = "Velg jordtype";
+      else if (!form.bottomArea || !form.sideArea) errors.infiltration = "Fyll ut A_bunn og A_sideflate";
     }
-
     return errors;
+  }
+
+  function isFormValid(): boolean {
+    if (!form.projectName.trim()) return false;
+    if (!municipalityNumber.trim()) return false;
+    if (!cadastralNumber.trim()) return false;
+    if (!propertyNumber.trim()) return false;
+    if (!selectedStationId) return false;
+    if (heightDifference === null) return false;
+    if (concentrationTime === null) return false;
+    if (!form.area || Number(form.area) <= 0) return false;
+    if (!form.climateFactor || Number(form.climateFactor) <= 0) return false;
+    if (form.infiltrationMethod === "soiltype") {
+      if (!form.selectedSoilType) return false;
+      if (!form.bottomArea || !form.sideArea) return false;
+    }
+    return true;
   }
 
   // ---------------------------------------------------------------------------
@@ -238,7 +232,6 @@ export default function HomePage({
         setHeightDifference(data.hoydeforskjell_m);
         setLength(data.lengde_m);
         setConcentrationTime(data.konsentrasjonstid_ivf_min);
-        // Clear terrain validation errors once computed
         setValidationErrors((prev) => ({
           ...prev,
           heightDifference: undefined,
@@ -272,19 +265,15 @@ export default function HomePage({
         bnr: data.bruksnummer,
         kommunenummer: data.kommunenummer,
       });
-
       const nearestStation = findNearestStation(data.centroid, weatherStations);
       if (nearestStation) {
         setSelectedStationId(nearestStation.id);
         setStationSearch("");
         setStationDropdownOpen(false);
       }
-
       setRightPanelView("map");
       setMobileTab("map");
-
       if (data.warnings?.length > 0) setPropertyError(data.warnings.join(" "));
-
       setValidationErrors((prev) => ({
         ...prev,
         municipalityNumber: undefined,
@@ -392,6 +381,7 @@ export default function HomePage({
     pdfError,
     handleReset,
     validationErrors,
+    formValid: isFormValid(),
   };
 
   const mapProps = {

@@ -196,6 +196,7 @@ export default function ProfilePage({
               Trygt Overvann AS
             </div>
           </Link>
+          
 
           <div className="flex-1" />
 
@@ -429,6 +430,17 @@ export default function ProfilePage({
           </div>
         </div>
       </header>
+
+      <div className="bg-[#F6F8FF] px-8 pt-6 dark:bg-slate-950">
+  <Link
+    to="/"
+    className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+  >
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+      <path d="M19 12H5M5 12l7-7M5 12l7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  </Link>
+</div>
 
       <main className="h-[calc(100dvh-4rem)] bg-[#F6F8FF] dark:bg-slate-950">
         <div className="grid h-full grid-cols-[240px_1fr]">

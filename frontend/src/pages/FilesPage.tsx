@@ -398,12 +398,25 @@ export default function FilesPage({
         </div>
       </header>
 
+    
+
       {/* ── Main ── */}
       <main className="bg-[#F6F8FF] px-8 py-8 dark:bg-slate-950">
-        <div className="mx-auto max-w-6xl">
+  <div>
 
-          {/* Title + search row */}
-          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    {/* Tilbake */}
+    <Link
+      to="/"
+      className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+    >
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+        <path d="M19 12H5M5 12l7-7M5 12l7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      
+    </Link>
+
+    {/* Tittel + søk */}
+    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Mine filer</h1>
             <div className="relative w-full sm:w-80">
               <svg
