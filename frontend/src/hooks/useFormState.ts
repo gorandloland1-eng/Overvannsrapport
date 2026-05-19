@@ -25,6 +25,13 @@ export const defaultFormState = {
       gravel: "",
       green: "",
     },
+    coefficients: {
+      roof: "0.95",
+      asphalt: "0.85",
+      paving: "0.6",
+      gravel: "0.4",
+      green: "0.15",
+    },
   },
   infiltrationMethod: "direct" as "direct" | "soiltype",
   selectedSoilType: "",

@@ -1,14 +1,6 @@
 {
-  "cached_at": 1777543860.9669771,
+  "cached_at": 1779181695.4073842,
   "stations": [
-    {
-      "id": "SN36055",
-      "name": "ARENDAL SENTRUM",
-      "municipality": "ARENDAL",
-      "county": "AGDER",
-      "lon": 8.7653,
-      "lat": 58.4603
-    },
     {
       "id": "SN19710",
       "name": "ASKER",

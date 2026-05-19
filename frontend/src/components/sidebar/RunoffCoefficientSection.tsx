@@ -20,10 +20,20 @@ const SURFACES: SurfaceRow[] = [
 ];
 
 type RunoffScenarioInputs = Record<SurfaceKey, string>;
+type RunoffCoefficientInputs = Record<SurfaceKey, string>;
+
+const DEFAULT_COEFFICIENTS: RunoffCoefficientInputs = {
+  roof: "0.95",
+  asphalt: "0.85",
+  paving: "0.6",
+  gravel: "0.4",
+  green: "0.15",
+};
 
 type RunoffInputs = {
   before: RunoffScenarioInputs;
   after: RunoffScenarioInputs;
+  coefficients: RunoffCoefficientInputs;
 };
 
 type Props = {
@@ -51,6 +61,7 @@ function getInitialInputs(form: any): RunoffInputs {
   const saved = form.runoffInputs ?? {};
   const before = saved.before ?? saved;
   const after = saved.after ?? saved.before ?? saved;
+  const coefficients = saved.coefficients ?? {};
 
   return {
     before: {
@@ -67,11 +78,19 @@ function getInitialInputs(form: any): RunoffInputs {
       gravel: after.gravel ?? "",
       green: after.green ?? "",
     },
+    coefficients: {
+      roof: coefficients.roof ?? DEFAULT_COEFFICIENTS.roof,
+      asphalt: coefficients.asphalt ?? DEFAULT_COEFFICIENTS.asphalt,
+      paving: coefficients.paving ?? DEFAULT_COEFFICIENTS.paving,
+      gravel: coefficients.gravel ?? DEFAULT_COEFFICIENTS.gravel,
+      green: coefficients.green ?? DEFAULT_COEFFICIENTS.green,
+    },
   };
 }
 
 function calculateScenario(
   scenarioInputs: RunoffScenarioInputs,
+  coefficients: RunoffCoefficientInputs,
   intensity: number,
   climateFactor: number
 ) {
@@ -82,7 +101,7 @@ function calculateScenario(
 
   const weightedArea = SURFACES.reduce(
     (sum, surface) =>
-      sum + numberValue(scenarioInputs[surface.key]) * surface.coefficient,
+      sum + numberValue(scenarioInputs[surface.key]) * numberValue(coefficients[surface.key]),
     0
   );
 
@@ -142,8 +161,8 @@ export default function RunoffCoefficientSection({
   const totals = useMemo(() => {
     const intensity = numberValue(manualIntensity);
     const climateFactor = numberValue(form.climateFactor || 1);
-    const before = calculateScenario(inputs.before, intensity, climateFactor);
-    const after = calculateScenario(inputs.after, intensity, climateFactor);
+    const before = calculateScenario(inputs.before, inputs.coefficients, intensity, climateFactor);
+    const after = calculateScenario(inputs.after, inputs.coefficients, intensity, climateFactor);
     const additionalDischarge = Math.max(0, after.qDim - before.qDim);
 
     return {
@@ -155,11 +174,21 @@ export default function RunoffCoefficientSection({
     };
   }, [inputs, manualIntensity, form.climateFactor]);
 
-  function setInput(scenario: keyof RunoffInputs, key: SurfaceKey, value: string) {
+  function setInput(scenario: "before" | "after", key: SurfaceKey, value: string) {
     setInputs((prev) => ({
       ...prev,
       [scenario]: {
         ...prev[scenario],
+        [key]: value,
+      },
+    }));
+  }
+
+  function setCoefficient(key: SurfaceKey, value: string) {
+    setInputs((prev) => ({
+      ...prev,
+      coefficients: {
+        ...prev.coefficients,
         [key]: value,
       },
     }));
@@ -270,8 +299,15 @@ export default function RunoffCoefficientSection({
                         className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-900 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:ring-slate-700"
                       />
                     </div>
-                    <div className="px-3 py-2 text-sm text-slate-600 dark:text-slate-300">
-                      {surface.coefficient}
+                    <div className="px-2 py-2">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={inputs.coefficients[surface.key]}
+                        onChange={(e) => setCoefficient(surface.key, e.target.value)}
+                        className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-900 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:ring-slate-700"
+                      />
                     </div>
                   </div>
                 ))}
