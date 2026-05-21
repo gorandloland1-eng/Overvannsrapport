@@ -118,6 +118,24 @@ function formatAreaHa(areaM2: number) {
   return (areaM2 / 10000).toFixed(4).replace(/\.?0+$/, "");
 }
 
+function PdfSavingOverlay() {
+  return (
+    <div className="fixed inset-0 z-[99998] flex items-center justify-center bg-black/45 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-2xl dark:bg-slate-900">
+        <div className="mx-auto mb-5 h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-[#213F53] dark:border-slate-700 dark:border-t-sky-400" />
+
+        <h2 className="mb-2 text-xl font-bold text-slate-900 dark:text-slate-100">
+          Filene genereres
+        </h2>
+
+        <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">
+          Kan ta opp til 1 minutt.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage({
   darkMode,
   setDarkMode,
@@ -840,6 +858,8 @@ export default function HomePage({
           </div>
         </div>
       </main>
+
+      {pdfSaving && !pdfSuccess && <PdfSavingOverlay />}
 
       {pdfSuccess && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
