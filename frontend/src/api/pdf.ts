@@ -1,4 +1,4 @@
-const BASE = "http://localhost:8000";
+import { API_BASE } from "./config";
 
 export type PdfPayload = {
   project_name: string;
@@ -26,7 +26,7 @@ export type PdfResponse = {
 };
 
 export async function generatePdf(payload: PdfPayload): Promise<PdfResponse> {
-  const res = await fetch(`${BASE}/pdf/generate-pdf`, {
+  const res = await fetch(`${API_BASE}/pdf/generate-pdf`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

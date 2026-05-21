@@ -1,2 +1,7 @@
 *.pyc
 *.pdf
+.DS_Store
+__pycache__/
+backend/output/
+backend/cache/
+output/

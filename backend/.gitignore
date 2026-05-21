@@ -1,4 +1,6 @@
-echo ".DS_Store" >> .gitignore
-git rm -r --cached app/.DS_Store
-git rm -r --cached app/services/.DS_Store
-git commit -m "Remove DS_Store from tracking"
+.DS_Store
+__pycache__/
+*.py[cod]
+*.pdf
+output/
+cache/

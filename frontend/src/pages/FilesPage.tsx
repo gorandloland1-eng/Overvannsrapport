@@ -16,6 +16,7 @@ import {
   where,
 } from "firebase/firestore";
 import { Link, useNavigate } from "react-router-dom";
+import { API_BASE } from "../api/config";
 
 type SavedFile = {
   id: string;
@@ -187,7 +188,7 @@ export default function FilesPage({
       const encodedUrl = encodeURIComponent(url);
       const encodedFilename = encodeURIComponent(`${label || "rapport"}.pdf`);
       const response = await fetch(
-        `http://localhost:8000/pdf/download-from-url?url=${encodedUrl}&filename=${encodedFilename}`
+        `${API_BASE}/pdf/download-from-url?url=${encodedUrl}&filename=${encodedFilename}`
       );
       const blob = await response.blob();
       const objectUrl = URL.createObjectURL(blob);
@@ -209,7 +210,7 @@ export default function FilesPage({
       const encodedUrl = encodeURIComponent(url);
       const encodedFilename = encodeURIComponent(`${label}.png`);
       const response = await fetch(
-        `http://localhost:8000/pdf/download-from-url?url=${encodedUrl}&filename=${encodedFilename}`
+        `${API_BASE}/pdf/download-from-url?url=${encodedUrl}&filename=${encodedFilename}`
       );
       const blob = await response.blob();
       const objectUrl = URL.createObjectURL(blob);
