@@ -44,8 +44,26 @@ type Props = {
 };
 
 function numberValue(value: string | number | null | undefined) {
-  const number = Number(value);
+  const normalizedValue = typeof value === "string" ? value.replace(",", ".") : value;
+  const number = Number(normalizedValue);
   return Number.isFinite(number) ? number : 0;
+}
+
+function getNumericRecordValue<T>(
+  record: Record<string, T> | null | undefined,
+  targetKey: string | number
+) {
+  if (!record) return null;
+
+  const directValue = record[String(targetKey)];
+  if (directValue != null) return directValue;
+
+  const numericTarget = numberValue(targetKey);
+  const matchingKey = Object.keys(record).find(
+    (key) => numberValue(key) === numericTarget
+  );
+
+  return matchingKey ? record[matchingKey] : null;
 }
 
 function getNearestDuration(ivfData: IvfResponse | null, concentrationTime: number | null) {
@@ -125,6 +143,7 @@ export default function RunoffCoefficientSection({
   const [modalOpen, setModalOpen] = useState(false);
   const [inputs, setInputs] = useState<RunoffInputs>(() => getInitialInputs(form));
   const [manualIntensity, setManualIntensity] = useState("");
+  const [intensityMode, setIntensityMode] = useState<"auto" | "manual">("auto");
 
   const nearestDuration = useMemo(
     () => getNearestDuration(ivfData, concentrationTime),
@@ -133,14 +152,19 @@ export default function RunoffCoefficientSection({
 
   const ivfIntensity = useMemo(() => {
     if (!ivfData || nearestDuration == null) return null;
-    return ivfData.ls_ha[String(nearestDuration)]?.[String(form.returnPeriod)] ?? null;
+    const durationValues = getNumericRecordValue(ivfData.ls_ha, nearestDuration);
+    return getNumericRecordValue(durationValues, form.returnPeriod);
   }, [ivfData, nearestDuration, form.returnPeriod]);
+
+  const autoIntensity = ivfIntensity != null ? String(ivfIntensity) : "";
+  const displayedIntensity = intensityMode === "auto" ? autoIntensity : manualIntensity;
 
   useEffect(() => {
     if (!modalOpen) return;
     setInputs(getInitialInputs(form));
-    setManualIntensity(ivfIntensity != null ? String(ivfIntensity) : "");
-  }, [modalOpen, form, ivfIntensity]);
+    setIntensityMode("auto");
+    setManualIntensity("");
+  }, [modalOpen]);
 
   useEffect(() => {
     if (!modalOpen) return;
@@ -159,7 +183,7 @@ export default function RunoffCoefficientSection({
   }, [modalOpen]);
 
   const totals = useMemo(() => {
-    const intensity = numberValue(manualIntensity);
+    const intensity = numberValue(displayedIntensity);
     const climateFactor = numberValue(form.climateFactor || 1);
     const before = calculateScenario(inputs.before, inputs.coefficients, intensity, climateFactor);
     const after = calculateScenario(inputs.after, inputs.coefficients, intensity, climateFactor);
@@ -172,7 +196,7 @@ export default function RunoffCoefficientSection({
       after,
       additionalDischarge,
     };
-  }, [inputs, manualIntensity, form.climateFactor]);
+  }, [inputs, displayedIntensity, form.climateFactor]);
 
   function setInput(scenario: "before" | "after", key: SurfaceKey, value: string) {
     setInputs((prev) => ({
@@ -321,14 +345,29 @@ export default function RunoffCoefficientSection({
                   <input
                     type="number"
                     min="0"
-                    value={manualIntensity}
-                    onChange={(e) => setManualIntensity(e.target.value)}
+                    value={displayedIntensity}
+                    onChange={(e) => {
+                      setIntensityMode("manual");
+                      setManualIntensity(e.target.value);
+                    }}
                     placeholder="Fra IVF-tabell"
                     className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:ring-slate-700"
                   />
                   {ivfIntensity != null && nearestDuration != null && (
-                    <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                      IVF: {nearestDuration} min / {form.returnPeriod} år
+                    <div className="mt-1 flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      <span>IVF: {nearestDuration} min / {form.returnPeriod} år</span>
+                      {intensityMode === "manual" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIntensityMode("auto");
+                            setManualIntensity("");
+                          }}
+                          className="font-semibold text-[#213F53] hover:text-[#1a3344] dark:text-slate-200"
+                        >
+                          Bruk IVF
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
