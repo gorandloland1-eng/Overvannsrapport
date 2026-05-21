@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
@@ -15,8 +14,8 @@ export default function Header({ darkMode, onToggleDarkMode }: HeaderProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef(null);
-  const buttonRef = useRef(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     function onDown(e: MouseEvent) {
@@ -80,7 +79,7 @@ export default function Header({ darkMode, onToggleDarkMode }: HeaderProps) {
                   {user?.photoURL ? (
                     <img src={user.photoURL} alt="Profil" className="h-full w-full object-cover" />
                   ) : user?.displayName ? (
-                    user.displayName.split(" ").map((n) => n[0]).join("").toUpperCase()
+                    user.displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase()
                   ) : (
                     user?.email?.charAt(0).toUpperCase()
                   )}

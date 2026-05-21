@@ -1,5 +1,5 @@
 import logo from "../assets/logo.png";
-import { useEffect, useRef, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import {
   signOut,
@@ -18,7 +18,7 @@ export default function ProfilePage({
   setDarkMode,
 }: {
   darkMode: boolean;
-  setDarkMode: (v: boolean) => void;
+  setDarkMode: Dispatch<SetStateAction<boolean>>;
 }) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -280,7 +280,7 @@ export default function ProfilePage({
                     ) : user?.displayName ? (
                       user.displayName
                         .split(" ")
-                        .map((n) => n[0])
+                        .map((n: string) => n[0])
                         .join("")
                         .toUpperCase()
                     ) : (

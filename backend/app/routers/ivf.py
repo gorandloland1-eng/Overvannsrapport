@@ -317,19 +317,6 @@ def get_nearest_station(
     }
 
 
-@router.get("/stations/debug")
-def get_stations_debug():
-    cached = load_cached_filtered_stations()
-
-    return {
-        "cache_exists": bool(cached),
-        "cache_fresh": cached["is_fresh"] if cached else False,
-        "cache_count": len(cached["stations"]) if cached else 0,
-        "cache_file": str(STATIONS_CACHE_FILE),
-        "cache_building": _cache_building,
-    }
-
-
 @router.get("/ivf/{station_id}")
 def get_ivf(station_id: str):
     sr = SESSION.get(

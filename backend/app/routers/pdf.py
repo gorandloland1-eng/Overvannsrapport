@@ -133,7 +133,7 @@ def download_from_url(url: str, filename: str = "fil"):
 
         return FileResponse(
             path=tmp.name,
-            media_type=content_type,      # <-- dynamisk, ikke hardkodet pdf
+            media_type=content_type,
             filename=filename,
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )

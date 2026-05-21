@@ -14,6 +14,7 @@ import type { AddressSearchResult } from "../api/property";
 import { fetchTerrain } from "../api/terrain";
 import { fetchWeatherStations, fetchIvfData } from "../api/ivf";
 import type { IvfResponse, WeatherStation } from "../api/ivf";
+import { API_BASE } from "../api/config";
 
 import Header from "../components/layout/Header";
 import PropertyMap from "../components/map/PropertyMap";
@@ -328,7 +329,7 @@ export default function HomePage({
   }, [selectedStationId]);
 
   useEffect(() => {
-    fetch("http://localhost:8000/calculation/jordtyper")
+    fetch(`${API_BASE}/calculation/jordtyper`)
       .then((r) => r.json())
       .then(setSoilTypes)
       .catch(() => {});

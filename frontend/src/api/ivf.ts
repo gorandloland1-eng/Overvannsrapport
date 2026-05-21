@@ -1,4 +1,4 @@
-const BASE = "http://localhost:8000";
+import { API_BASE } from "./config";
 
 export type WeatherStation = {
   id: string;
@@ -22,13 +22,13 @@ export type IvfResponse = {
 };
 
 export async function fetchWeatherStations(): Promise<WeatherStation[]> {
-  const res = await fetch(`${BASE}/ivf/stations`);
+  const res = await fetch(`${API_BASE}/ivf/stations`);
   if (!res.ok) throw new Error("Kunne ikke hente værstasjoner");
   return res.json();
 }
 
 export async function fetchIvfData(stationId: string): Promise<IvfResponse> {
-  const res = await fetch(`${BASE}/ivf/ivf/${stationId}`);
+  const res = await fetch(`${API_BASE}/ivf/ivf/${stationId}`);
   if (!res.ok) throw new Error((await res.text()) || "Kunne ikke hente IVF-data");
   return res.json();
 }
