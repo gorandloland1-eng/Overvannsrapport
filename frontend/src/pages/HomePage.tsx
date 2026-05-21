@@ -312,10 +312,14 @@ export default function HomePage({
   }
 
   useEffect(() => {
-    if (!selectedStationId) return;
+    if (!selectedStationId) {
+      setIvfData(null);
+      return;
+    }
 
     setIvfLoading(true);
     setIvfError("");
+    setIvfData(null);
 
     fetchIvfData(selectedStationId)
       .then(setIvfData)
@@ -664,6 +668,7 @@ export default function HomePage({
     heightDifference,
     length,
     concentrationTime,
+    ivfData,
     terrainLoading,
     terrainError,
     soilTypes,
