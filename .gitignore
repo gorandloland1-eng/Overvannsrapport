@@ -5,3 +5,8 @@ __pycache__/
 backend/output/
 backend/cache/
 output/
+.env
+*.env
+*firebase-adminsdk*.json
+serviceAccountKey.json
+*service-account*.json
