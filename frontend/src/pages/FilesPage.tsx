@@ -45,10 +45,12 @@ type SavedFile = {
 };
 
 const MAP_LAYER_LABELS: Record<string, string> = {
-  kart:      "Kart",
-  terreng:   "Terreng",
-  satellitt: "Satellitt",
+  kart:      "Terreng",
+  terreng:   "Topografi",
+  satellitt: "Satelitt",
 };
+
+const MAP_IMAGE_LABELS = ["Terreng", "Topografi", "Satelitt"];
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -266,7 +268,7 @@ export default function FilesPage({
     if (file.mapImageUrls?.length) {
       imageItems = file.mapImageUrls.map((url, i) => ({
         type: "image" as const,
-        label: `Terreng kart utklipp – ${["Kart", "Terreng", "Satellitt"][i] ?? `Lag ${i + 1}`}`,
+        label: `Kart utklipp - ${MAP_IMAGE_LABELS[i] ?? `Lag ${i + 1}`}`,
         url,
       }));
     } else if (file.screenshotUrls) {
@@ -274,7 +276,7 @@ export default function FilesPage({
         .filter(([, url]) => !!url)
         .map(([key, url]) => ({
           type: "image" as const,
-          label: `Terreng kart utklipp – ${MAP_LAYER_LABELS[key] ?? key}`,
+          label: `Kart utklipp - ${MAP_LAYER_LABELS[key] ?? key}`,
           url: url as string,
         }));
     }
