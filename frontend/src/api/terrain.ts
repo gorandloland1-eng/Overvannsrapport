@@ -1,4 +1,4 @@
-import { API_BASE } from "./config";
+import { API_BASE, apiFetch } from "./config";
 
 export type TerrainResponse = {
   lengde_m: number;
@@ -15,7 +15,7 @@ export async function fetchTerrain(
   lat2: number,
   lng2: number
 ): Promise<TerrainResponse> {
-  const res = await fetch(`${API_BASE}/calculate-terrain`, {
+  const res = await apiFetch(`${API_BASE}/calculate-terrain`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ lat1, lng1, lat2, lng2 }),

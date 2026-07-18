@@ -1,4 +1,4 @@
-import { API_BASE } from "./config";
+import { API_BASE, apiFetch } from "./config";
 
 export type PropertyLookupResponse = {
   eiendom_id: string;
@@ -40,7 +40,7 @@ export async function fetchPropertyByMatrikkel(
     lng?: number | null;
   }
 ): Promise<PropertyLookupResponse> {
-  const res = await fetch(`${API_BASE}/v1/eiendom/oppslag`, {
+  const res = await apiFetch(`${API_BASE}/v1/eiendom/oppslag`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -63,7 +63,7 @@ export async function fetchPropertyByMatrikkel(
 export async function fetchAddressSearch(
   query: string
 ): Promise<AddressSearchResult[]> {
-  const res = await fetch(
+  const res = await apiFetch(
     `${API_BASE}/v1/eiendom/adresse/sok?q=${encodeURIComponent(query)}`
   );
 
@@ -79,7 +79,7 @@ export async function fetchPropertyByPoint(
   lng: number,
   radius = 50
 ): Promise<PropertyPointResponse> {
-  const res = await fetch(
+  const res = await apiFetch(
     `${API_BASE}/v1/eiendom/punkt?lat=${lat}&lng=${lng}&radius=${radius}`
   );
 

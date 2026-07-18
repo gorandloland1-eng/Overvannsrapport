@@ -14,7 +14,7 @@ import type { AddressSearchResult } from "../api/property";
 import { fetchTerrain } from "../api/terrain";
 import { fetchWeatherStations, fetchIvfData } from "../api/ivf";
 import type { IvfResponse, WeatherStation } from "../api/ivf";
-import { API_BASE } from "../api/config";
+import { API_BASE, apiFetch } from "../api/config";
 
 import Header from "../components/layout/Header";
 import PropertyMap from "../components/map/PropertyMap";
@@ -340,14 +340,28 @@ export default function HomePage({
     setIvfError("");
     setIvfData(null);
 
-    fetchIvfData(selectedStationId)
-      .then(setIvfData)
-      .catch((e) => setIvfError(e.message))
-      .finally(() => setIvfLoading(false));
+    const controller = new AbortController();
+    let active = true;
+
+    fetchIvfData(selectedStationId, controller.signal)
+      .then((data) => {
+        if (active) setIvfData(data);
+      })
+      .catch((e) => {
+        if (active && e.name !== "AbortError") setIvfError(e.message);
+      })
+      .finally(() => {
+        if (active) setIvfLoading(false);
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, [selectedStationId]);
 
   useEffect(() => {
-    fetch(`${API_BASE}/calculation/jordtyper`)
+    apiFetch(`${API_BASE}/calculation/jordtyper`)
       .then((r) => r.json())
       .then(setSoilTypes)
       .catch(() => {});

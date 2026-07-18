@@ -1,9 +1,15 @@
 import os
 from datetime import datetime
+from xml.sax.saxutils import escape
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.lib import colors
+from app.utils.safe_paths import safe_folder_name
+
+
+def _txt(value) -> str:
+    return escape(str(value or ""))
 
 def _fmt(value, decimals=2):
     if value is None:
@@ -21,7 +27,7 @@ def _paragraph_table(rows, styles, col_widths=None):
     )
 
 def generate_calc_pdf(data, kibler_resultat=None) -> str:
-    safe_name = data.project_name.strip() or "Ukjent_prosjekt"
+    safe_name = safe_folder_name(data.project_name)
     output_path = os.path.join("output", safe_name)
     os.makedirs(output_path, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -32,7 +38,7 @@ def generate_calc_pdf(data, kibler_resultat=None) -> str:
     elements = []
 
     # --- Tittel --- #
-    elements.append(Paragraph(f"Utregninger – {data.project_name}", styles["Heading1"]))
+    elements.append(Paragraph(f"Utregninger – {_txt(data.project_name)}", styles["Heading1"]))
     elements.append(Paragraph(f"Dato: {datetime.now().strftime('%d.%m.%Y')}", styles["Normal"]))
     elements.append(Spacer(1, 0.3 * inch))
 

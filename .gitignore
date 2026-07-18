@@ -6,7 +6,16 @@ backend/output/
 backend/cache/
 output/
 .env
+.env.*
 *.env
 *firebase-adminsdk*.json
 serviceAccountKey.json
 *service-account*.json
+*service_account*.json
+*.pem
+*.p12
+*.key
+!.env.example
+!.env.template
+!*.env.example
+!*.env.template

@@ -1,4 +1,4 @@
-import { API_BASE } from "./config";
+import { API_BASE, apiFetch } from "./config";
 
 export type WeatherStation = {
   id: string;
@@ -22,13 +22,35 @@ export type IvfResponse = {
 };
 
 export async function fetchWeatherStations(): Promise<WeatherStation[]> {
-  const res = await fetch(`${API_BASE}/ivf/stations`);
+  const res = await apiFetch(`${API_BASE}/ivf/stations`);
   if (!res.ok) throw new Error("Kunne ikke hente værstasjoner");
   return res.json();
 }
 
-export async function fetchIvfData(stationId: string): Promise<IvfResponse> {
-  const res = await fetch(`${API_BASE}/ivf/ivf/${stationId}`);
-  if (!res.ok) throw new Error((await res.text()) || "Kunne ikke hente IVF-data");
+async function getSafeApiError(res: Response, fallback: string): Promise<string> {
+  try {
+    const payload = await res.json();
+    if (typeof payload?.detail === "string") {
+      return payload.detail;
+    }
+  } catch {
+    // Ignore non-JSON error bodies.
+  }
+
+  if (res.status === 504) {
+    return "Værdatatjenesten brukte for lang tid. Prøv igjen.";
+  }
+
+  return fallback;
+}
+
+export async function fetchIvfData(
+  stationId: string,
+  signal?: AbortSignal
+): Promise<IvfResponse> {
+  const res = await apiFetch(`${API_BASE}/ivf/${stationId}`, { signal });
+  if (!res.ok) {
+    throw new Error(await getSafeApiError(res, "Kunne ikke hente IVF-data"));
+  }
   return res.json();
 }

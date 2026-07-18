@@ -1,11 +1,17 @@
 import os
 from datetime import datetime
+from xml.sax.saxutils import escape
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
+from app.utils.safe_paths import safe_folder_name
+
+
+def _txt(value) -> str:
+    return escape(str(value or ""))
 
 def generate_project_pdf(data, kibler_resultat=None) -> str:
-    safe_name = data.project_name.strip() or "Ukjent_prosjekt"
+    safe_name = safe_folder_name(data.project_name)
     output_path = os.path.join("output", safe_name)
     os.makedirs(output_path, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -16,20 +22,20 @@ def generate_project_pdf(data, kibler_resultat=None) -> str:
     elements = []
 
     # --- Tittel --- #
-    elements.append(Paragraph(f"Overvannsrapport – {data.project_name}", styles["Heading1"]))
+    elements.append(Paragraph(f"Overvannsrapport – {_txt(data.project_name)}", styles["Heading1"]))
     elements.append(Paragraph(f"Dato: {datetime.now().strftime('%d.%m.%Y')}", styles["Normal"]))
     elements.append(Spacer(1, 0.3 * inch))
 
     # --- Eiendomsdata --- #
     elements.append(Paragraph("Eiendomsdata", styles["Heading2"]))
-    elements.append(Paragraph(f"Adresse: {data.eiendom_adresse or 'Ikke angitt'}", styles["Normal"]))
+    elements.append(Paragraph(f"Adresse: {_txt(data.eiendom_adresse or 'Ikke angitt')}", styles["Normal"]))
     if data.eiendom_gnr and data.eiendom_bnr:
         elements.append(Paragraph(f"Gårdsnummer / Bruksnummer: {data.eiendom_gnr} / {data.eiendom_bnr}", styles["Normal"]))
     elements.append(Spacer(1, 0.3 * inch))
 
     # --- Værstasjon --- #
     elements.append(Paragraph("Værstasjon", styles["Heading2"]))
-    elements.append(Paragraph(f"Valgt værstasjon: {data.selected_weather_station_name or data.selected_weather_station}", styles["Normal"]))
+    elements.append(Paragraph(f"Valgt værstasjon: {_txt(data.selected_weather_station_name or data.selected_weather_station)}", styles["Normal"]))
     elements.append(Spacer(1, 0.3 * inch))
 
     # --- Inndata / Parametere --- #

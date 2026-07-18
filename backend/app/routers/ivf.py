@@ -15,6 +15,9 @@ FROST_BASE = "https://frost.met.no"
 IDF_STATION = "https://frost-rc.met.no/api/v1/rainfall/idf/station"
 IDF_GRID = "https://frost-rc.met.no/api/v1/rainfall/idf/grid"
 AUTH = (CLIENT_ID, "")
+FROST_CONNECT_TIMEOUT_SECONDS = 5
+FROST_READ_TIMEOUT_SECONDS = 20
+FROST_TIMEOUT = (FROST_CONNECT_TIMEOUT_SECONDS, FROST_READ_TIMEOUT_SECONDS)
 
 router = APIRouter()
 
@@ -35,6 +38,171 @@ CACHE_MAX_AGE_SECONDS = 60 * 60 * 24
 
 _cache_lock = threading.Lock()
 _cache_building = False
+_source_metadata_cache: dict[str, dict] = {}
+_source_metadata_lock = threading.Lock()
+
+
+def _log_frost_failure(
+    station_id: str,
+    endpoint: str,
+    failure_type: str,
+    *,
+    status_code: int | None = None,
+    timeout: tuple[int, int] | None = None,
+    exc: BaseException | None = None,
+) -> None:
+    parts = [
+        f"[Frost] station={station_id}",
+        f"endpoint={endpoint}",
+        f"type={failure_type}",
+    ]
+    if status_code is not None:
+        parts.append(f"status={status_code}")
+    if timeout is not None:
+        parts.append(f"connect_timeout={timeout[0]}s")
+        parts.append(f"read_timeout={timeout[1]}s")
+    if exc is not None:
+        parts.append(f"exception={type(exc).__name__}")
+
+    print(" ".join(parts))
+
+
+def _safe_frost_json(
+    *,
+    station_id: str,
+    endpoint: str,
+    url: str,
+    params: dict,
+    timeout: tuple[int, int] = FROST_TIMEOUT,
+) -> tuple[int, dict | None]:
+    try:
+        response = SESSION.get(url, params=params, timeout=timeout)
+    except requests.exceptions.ConnectTimeout as exc:
+        _log_frost_failure(
+            station_id,
+            endpoint,
+            "connect_timeout",
+            timeout=timeout,
+            exc=exc,
+        )
+        raise HTTPException(
+            status_code=504,
+            detail="Værdatatjenesten brukte for lang tid på å koble til. Prøv igjen.",
+        )
+    except requests.exceptions.ReadTimeout as exc:
+        _log_frost_failure(
+            station_id,
+            endpoint,
+            "read_timeout",
+            timeout=timeout,
+            exc=exc,
+        )
+        raise HTTPException(
+            status_code=504,
+            detail="Værdatatjenesten brukte for lang tid på å svare. Prøv igjen.",
+        )
+    except requests.exceptions.ConnectionError as exc:
+        _log_frost_failure(station_id, endpoint, "connection_error", exc=exc)
+        raise HTTPException(
+            status_code=502,
+            detail="Værdatatjenesten kunne ikke nås. Prøv igjen senere.",
+        )
+    except requests.exceptions.RequestException as exc:
+        _log_frost_failure(station_id, endpoint, "request_error", exc=exc)
+        raise HTTPException(
+            status_code=502,
+            detail="Værdatatjenesten feilet. Prøv igjen senere.",
+        )
+
+    if response.status_code == 404:
+        _log_frost_failure(station_id, endpoint, "not_found", status_code=response.status_code)
+        return response.status_code, None
+
+    if response.status_code >= 400:
+        _log_frost_failure(
+            station_id,
+            endpoint,
+            "http_error",
+            status_code=response.status_code,
+        )
+        raise HTTPException(
+            status_code=502,
+            detail="Værdatatjenesten returnerte en feil. Prøv igjen senere.",
+        )
+
+    content_type = response.headers.get("Content-Type", "")
+    if "json" not in content_type.lower():
+        _log_frost_failure(station_id, endpoint, "invalid_content_type")
+        raise HTTPException(
+            status_code=502,
+            detail="Værdatatjenesten returnerte ugyldig data.",
+        )
+
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        _log_frost_failure(station_id, endpoint, "invalid_json", exc=exc)
+        raise HTTPException(
+            status_code=502,
+            detail="Værdatatjenesten returnerte ugyldig JSON.",
+        )
+
+    if not isinstance(payload, dict):
+        _log_frost_failure(station_id, endpoint, "invalid_json_shape")
+        raise HTTPException(
+            status_code=502,
+            detail="Værdatatjenesten returnerte uventet dataformat.",
+        )
+
+    return response.status_code, payload
+
+
+def _parse_ivf_value(row: dict) -> tuple[int, int, float] | None:
+    if not isinstance(row, dict):
+        return None
+
+    try:
+        duration = int(row.get("duration"))
+        frequency = int(row.get("frequency"))
+        intensity = float(row.get("intensity"))
+    except (TypeError, ValueError):
+        return None
+
+    if duration <= 0 or frequency <= 0 or intensity < 0:
+        return None
+
+    return duration, frequency, intensity
+
+
+def get_station_source_metadata(station_id: str) -> dict:
+    with _source_metadata_lock:
+        cached = _source_metadata_cache.get(station_id)
+    if cached is not None:
+        return cached
+
+    _, payload = _safe_frost_json(
+        station_id=station_id,
+        endpoint="sources",
+        url=f"{FROST_BASE}/sources/v0.jsonld",
+        params={"ids": station_id, "fields": "id,name,geometry"},
+    )
+
+    sources = payload.get("data", []) if payload else []
+    if not isinstance(sources, list) or not sources:
+        raise HTTPException(status_code=404, detail=f"Fant ikke stasjon {station_id}")
+
+    source = sources[0]
+    if not isinstance(source, dict):
+        _log_frost_failure(station_id, "sources", "invalid_station_shape")
+        raise HTTPException(
+            status_code=502,
+            detail="Værdatatjenesten returnerte uventet stasjonsformat.",
+        )
+
+    with _source_metadata_lock:
+        _source_metadata_cache[station_id] = source
+
+    return source
 
 
 def mm_to_lsha(mm: float, dur_min: int) -> float:
@@ -317,18 +485,9 @@ def get_nearest_station(
     }
 
 
-@router.get("/ivf/{station_id}")
+@router.get("/{station_id}")
 def get_ivf(station_id: str):
-    sr = SESSION.get(
-        f"{FROST_BASE}/sources/v0.jsonld",
-        params={"ids": station_id, "fields": "id,name,geometry"},
-        timeout=15,
-    )
-
-    if sr.status_code != 200 or not sr.json().get("data"):
-        raise HTTPException(status_code=404, detail=f"Fant ikke stasjon {station_id}")
-
-    src = sr.json()["data"][0]
+    src = get_station_source_metadata(station_id)
     station_name = src.get("name", station_id)
     geom = src.get("geometry", {})
     coords = geom.get("coordinates", []) if geom else []
@@ -338,22 +497,23 @@ def get_ivf(station_id: str):
 
     numeric_id = station_id.upper().replace("SN", "")
 
-    r_mm = SESSION.get(
-        IDF_STATION,
+    status_mm, station_payload = _safe_frost_json(
+        station_id=station_id,
+        endpoint="idf_station",
+        url=IDF_STATION,
         params={"stationids": numeric_id, "unit": "mm"},
-        timeout=30,
     )
 
-    use_grid = r_mm.status_code != 200
+    use_grid = status_mm != 200
     sources = []
 
-    if r_mm.status_code == 200:
-        sources = extract_station_sources(r_mm.json())
+    if status_mm == 200 and station_payload:
+        sources = extract_station_sources(station_payload)
         if not sources:
             use_grid = True
 
     if use_grid:
-        if lon is None:
+        if lon is None or lat is None:
             raise HTTPException(
                 status_code=404,
                 detail="Ingen IVF-data og ingen koordinater for stasjon",
@@ -361,19 +521,19 @@ def get_ivf(station_id: str):
 
         print(f"  {station_id}: fallback til grid ({lon}, {lat})")
 
-        r_g = SESSION.get(
-            IDF_GRID,
+        status_grid, grid_json = _safe_frost_json(
+            station_id=station_id,
+            endpoint="idf_grid",
+            url=IDF_GRID,
             params={"location": f"POINT({lon} {lat})", "unit": "mm"},
-            timeout=30,
         )
 
-        if r_g.status_code != 200:
+        if status_grid != 200 or not grid_json:
             raise HTTPException(
                 status_code=502,
                 detail="Ingen IVF-data tilgjengelig for denne stasjonen",
             )
 
-        grid_json = r_g.json()
         mm_vals = grid_json.get("values", [])
         first_year = grid_json.get("firstYearOfPeriod")
         last_year = grid_json.get("lastYearOfPeriod")
@@ -396,13 +556,29 @@ def get_ivf(station_id: str):
     ls_ha: dict[str, dict[str, float]] = {}
     mm_out: dict[str, dict[str, float]] = {}
 
+    if not isinstance(mm_vals, list):
+        _log_frost_failure(station_id, source_type, "invalid_values_shape")
+        raise HTTPException(
+            status_code=502,
+            detail="Værdatatjenesten returnerte uventet IVF-format.",
+        )
+
+    skipped_values = 0
     for v in mm_vals:
-        dur = str(v["duration"])
-        T = str(v["frequency"])
-        mm_val = v["intensity"]
+        parsed = _parse_ivf_value(v)
+        if parsed is None:
+            skipped_values += 1
+            continue
+
+        duration, frequency, mm_val = parsed
+        dur = str(duration)
+        T = str(frequency)
 
         mm_out.setdefault(dur, {})[T] = round(mm_val, 1)
-        ls_ha.setdefault(dur, {})[T] = mm_to_lsha(mm_val, int(dur))
+        ls_ha.setdefault(dur, {})[T] = mm_to_lsha(mm_val, duration)
+
+    if skipped_values:
+        print(f"[Frost] station={station_id} skipped_invalid_values={skipped_values}")
 
     if not ls_ha:
         raise HTTPException(status_code=404, detail="Ingen IVF-data for denne stasjonen")

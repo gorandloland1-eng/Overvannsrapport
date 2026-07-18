@@ -1,19 +1,14 @@
 import os
-import re
 from datetime import datetime
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from app.utils.safe_paths import safe_folder_name
 
 router = APIRouter(prefix="/uploads", tags=["uploads"])
+MAX_IMAGE_BYTES = 8 * 1024 * 1024
 
 
 def _safe_folder_name(value: str) -> str:
-    value = (value or "").strip()
-    if not value:
-        return "Ukjent_prosjekt"
-
-    value = re.sub(r'[<>:"/\\|?*]+', "_", value)
-    value = re.sub(r"\s+", "_", value)
-    return value[:100]
+    return safe_folder_name(value)
 
 
 @router.post("/screenshot")
@@ -41,8 +36,13 @@ async def upload_screenshot(
 
     try:
         content = await image.read()
+        if len(content) > MAX_IMAGE_BYTES:
+            raise HTTPException(status_code=413, detail="Bildet er for stort")
+
         with open(filepath, "wb") as f:
             f.write(content)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Kunne ikke lagre bilde: {str(e)}")
 
